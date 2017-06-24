@@ -37,7 +37,7 @@ screen -dmS quasar bash -c 'PORT=80 quasar dev'
 ```
 The application will utilise two separate screen sessions, one for Horizon and one for Quasar.
 
-You may visit the external IP address (http://your-external-ip/ of your server to utilise Moduler.
+You may visit the external IP address (http://your-external-ip/) of your server to utilise Moduler.
 
 ## Disclaimer
 This application was made for a student project and is not ready for production use under any cirumstances. Quasar and Horizon are run under development mode. Use at your own risk.
