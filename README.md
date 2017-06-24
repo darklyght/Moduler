@@ -14,6 +14,10 @@ chmod +x moduler-install.sh
 ```
 bash moduler-install.sh
 ```
+The script will automatically run the application after installation.
+
+You may visit the external IP address of your server to utilise Moduler.
+
 If you require an Ubuntu system to test the script on, do consider using my [DigitalOcean referral link](https://m.do.co/c/c9881f486a87). It is greatly appreciated and will support future development.
 
 ## Usage
@@ -25,6 +29,8 @@ screen -dmS horizon bash -c 'hz serve --dev --bind all'
 screen -dmS quasar bash -c 'PORT=80 quasar dev'
 ```
 The application will utilise two separate screen sessions, one for Horizon and one for Quasar.
+
+You may visit the external IP address of your server to utilise Moduler.
 
 ## Disclaimer
 This application was made for a student project and is not ready for production use under any cirumstances. Quasar and Horizon are run under development mode. Use at your own risk.
