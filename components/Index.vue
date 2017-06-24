@@ -84,7 +84,7 @@
   
   Vue.use(Validations)
   
-  const horizon = Horizon({host: '203.114.75.97:8181'})
+  const horizon = Horizon({host: 'localhost:8181'})
   const app_users = horizon('app_users')
 
   Toast.setDefaults({
