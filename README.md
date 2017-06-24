@@ -2,8 +2,12 @@
 
 A browser application for users to plan their modules across semesters and share it with their academic advisors and friends. Source code for http://orbital.darklyght.com.
 
+## Dependencies
+* node v6.11.0
+* npm v3.10.10
+
 ## Install
-On a clean Ubuntu system, run the following commands:
+On a clean Ubuntu 16.04 system, run the following commands:
 
 ```
 wget https://git.katliyang.com/darklyght/Orbital-2017-Install/raw/03bfde8eff853eff1fb8aa40e304fa5d64818d11/moduler-install.sh
