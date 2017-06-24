@@ -13,7 +13,7 @@ The script has been tested to run on a 1 GB DigitalOcean droplet. Any less RAM a
 On a clean Ubuntu 16.04 system, run the following commands:
 
 ```
-wget https://git.katliyang.com/darklyght/Orbital-2017-Install/raw/03bfde8eff853eff1fb8aa40e304fa5d64818d11/moduler-install.sh
+wget https://git.katliyang.com/darklyght/Orbital-2017-Install/raw/master/moduler-install.sh
 ```
 ```
 chmod +x moduler-install.sh
