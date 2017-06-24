@@ -6,6 +6,9 @@ A browser application for users to plan their modules across semesters and share
 * node v6.11.0
 * npm v3.10.10
 
+## System Requirements
+The script has been tested to run on a 1 GB DigitalOcean droplet. Any less RAM and the install will not proceed smoothly.
+
 ## Install
 On a clean Ubuntu 16.04 system, run the following commands:
 
