@@ -28,7 +28,7 @@ You may visit the external IP address (http://your-external-ip/) of your server 
 If you require an Ubuntu system to test the script on, do consider using my [DigitalOcean referral link](https://m.do.co/c/c9881f486a87). It is greatly appreciated and will support future development.
 
 ## Usage
-Run the following commands in `your-installation directory/modules_app` to run the application
+Run the following commands in `your-installation directory/modules_app` to run the application:
 ```
 screen -dmS horizon bash -c 'hz serve --dev --bind all'
 ```
