@@ -9,6 +9,8 @@ A browser application for users to plan their modules across semesters and share
 ## System Requirements
 The script has been tested to run on a 1 GB DigitalOcean droplet. Any less RAM and the install will not proceed smoothly.
 
+If you do not wish to use DigitalOcean, you may install the application on any KVM-based or Xen-based Virtual Private Server installed with vanilla Ubuntu 16.04. OpenVZ or LXC/LXD container-based VPS is not recommended.
+
 ## Install
 On a clean Ubuntu 16.04 system, run the following commands as root in your desired installation directory:
 
