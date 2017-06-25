@@ -39,5 +39,8 @@ The application will utilise two separate screen sessions, one for Horizon and o
 
 You may visit the external IP address (http://your-external-ip/) of your server to utilise Moduler.
 
+## Demo
+You may test out a demo of the application at http://orbital.darklyght.com if you do not wish to install Moduler on your own server.
+
 ## Disclaimer
 This application was made for a student project and is not ready for production use under any cirumstances. Quasar and Horizon are run under development mode. Use at your own risk.
