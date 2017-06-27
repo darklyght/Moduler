@@ -5,7 +5,7 @@
 
 
       <!-- Tab Definitions -->
-      <q-tabs :refs="$refs" default-tab="login" class="justified blue">
+      <q-tabs :refs="$refs" class="justified blue" v-model="tab">
         <q-tab name="login" icon="vpn_key">
           Log In
         </q-tab>
@@ -95,6 +95,7 @@
     name: 'Index',
     data () {
       return {
+        tab: 'login',
         login_data: {
           username: '',
           password: '',
@@ -124,8 +125,8 @@
         }
       },
       register_data: {
-        username: {required, alphaNum, minLength: minLength(6)},
-        password: {required, minLength: minLength(6)},
+        username: {required, alphaNum, minLength: minLength(5)},
+        password: {required, minLength: minLength(5)},
         repeat_password: {sameAsPassword: sameAs('password')},
         username_check: {
           username_used () {
@@ -160,51 +161,89 @@
         if (this.login_data.remember) {
           localStorage.setItem('username', this.login_data.username)
         }
-        this.$router.push({
-          name: 'Modules',
-          params: {
-            username: this.login_data.username
-          }
-        })
+        if (sessionStorage['username'] === 'admin') {
+          this.$router.push({
+            name: 'Admin'
+          })
+        }
+        else {
+          this.$router.push({
+            name: 'Modules',
+            params: {
+              username: this.login_data.username
+            }
+          })
+        }
         Toast.create.positive('Logged in.')
       },
       register () {
-        this.$v.register_data.username.$touch()
-        if (this.$v.register_data.username.$error) {
-          Toast.create.negative('Username must be at least 6 characters long and only consist of alphanumerics.')
-          return
-        }
-        this.$v.register_data.password.$touch()
-        if (this.$v.register_data.password.$error) {
-          Toast.create.negative('Password must be at least 6 characters long.')
-          return
-        }
-        this.$v.register_data.repeat_password.$touch()
-        if (this.$v.register_data.repeat_password.$error) {
-          Toast.create.negative('Passwords do not match. Please check again.')
-          return
-        }
-        this.$v.register_data.username_check.$touch()
-        if (this.$v.register_data.username_check.$error) {
-          Toast.create.negative('Username has already been taken. Please choose another username.')
-          return
-        }
         var login_data = {
           username: this.register_data.username,
           password: this.register_data.password
         }
-        app_users.store({
-          id: this.register_data.username,
-          login_data: login_data,
-          theme: 'blue',
-          modules: [[]],
-          shared_with_others: [],
-          shared_with_you: []
+        app_users.find('admin').fetch().subscribe(result => {
+          if (result) {
+            if (!result.registration_enabled) {
+              Toast.create.negative('Registration has been disabled by the admin. Please contact the admin for assistance.')
+            }
+            else {
+              this.$v.register_data.username.$touch()
+              if (this.$v.register_data.username.$error) {
+                Toast.create.negative('Username must be at least 5 characters long and only consist of alphanumerics.')
+                return
+              }
+              this.$v.register_data.password.$touch()
+              if (this.$v.register_data.password.$error) {
+                Toast.create.negative('Password must be at least 5 characters long.')
+                return
+              }
+              this.$v.register_data.repeat_password.$touch()
+              if (this.$v.register_data.repeat_password.$error) {
+                Toast.create.negative('Passwords do not match. Please check again.')
+                return
+              }
+              this.$v.register_data.username_check.$touch()
+              if (this.$v.register_data.username_check.$error) {
+                Toast.create.negative('Username has already been taken. Please choose another username.')
+                return
+              }
+              app_users.store({
+                id: this.register_data.username,
+                login_data: login_data,
+                theme: 'blue',
+                modules: [[]],
+                shared_with_others: [],
+                shared_with_you: []
+              })
+              Toast.create.positive('Account has been created successfully. You may now log in.')
+            }
+          }
+          else {
+            if (this.register_data.username === 'admin') {
+              app_users.store({
+                id: this.register_data.username,
+                login_data: login_data,
+                theme: 'blue',
+                registration_enabled: true
+              })
+              Toast.create.positive('Admin account has been created.')
+            }
+            else {
+              Toast.create.negative('Admin account must have username \'admin\'.')
+            }
+          }
         })
-        Toast.create.positive('Account has been created successfully. You may now log in.')
       },
       update: function (new_users) {
         this.users = new_users
+        for (var i = 0; i < this.users.length; i++) {
+          if (this.users[i].id === 'admin') {
+            return
+          }
+        }
+        Toast.create.negative('No admin account. Please create an admin account first.')
+        this.register_data.username = 'admin'
+        this.tab = 'register'
       }
     },
     mounted () {
