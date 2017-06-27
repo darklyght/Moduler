@@ -410,7 +410,7 @@
             </div>
             <div class="card" :class="theme_bg">
               <div class="card-title">
-                <h5>Shared With You</h5>
+                <h5>Shared with You</h5>
               </div>
               <div class="card-content">
                 <table width="100%" class="sharing">
@@ -1767,7 +1767,6 @@
       add_shared_with_others () {
         app_users.find(this.add_share.id).fetch().subscribe(result => {
           if (result && this.user.shared_with_others.indexOf(result.id) === -1) {
-            console.log(result)
             this.user.shared_with_others.push(result.id)
             result.shared_with_you.push(this.user.id)
             app_users.update({
@@ -1797,7 +1796,6 @@
         var id = this.user.shared_with_others[index]
         app_users.find(id).fetch().subscribe(result => {
           if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
-            console.log(result)
             this.user.shared_with_others.splice(index, 1)
             result.shared_with_you.splice(result.shared_with_you.indexOf(this.user.id), 1)
             app_users.update({
@@ -1808,7 +1806,7 @@
               id: result.id,
               shared_with_you: result.shared_with_you
             })
-            Toast.create.positive('Unshared your module plan with ' + this.add_share.id + '.')
+            Toast.create.positive('Unshared your module plan with ' + result.id + '.')
             this.add_shared_with_others_dialog_close()
           }
           else {
@@ -1905,6 +1903,10 @@
         })
         Toast.create.positive('Logged out.')
       },
+      //
+      //
+      //
+      // Universal Methods
       update: function (updated_info) {
         this.user = updated_info
         this.update_theme()
@@ -1925,6 +1927,9 @@
     beforeRouteLeave (to, from, next) {
       if (to.path === '/') {
         next()
+      }
+      else if (to.path === '/admin') {
+        next(false)
       }
       else if (to.path.substring(0, 6) === '/view/') {
         var id = to.path.substring(6)
