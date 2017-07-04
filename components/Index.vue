@@ -65,6 +65,10 @@
               <input required type="password" v-model="register_data.repeat_password" class="full-width" :class="{'has-error': $v.register_data.repeat_password.$error}" v-on:keyup.enter="register()">
               <label>Repeat Password</label>
             </div>
+            <div class="floating-label">
+              <input required type="text" v-model="register_data.email" class="full-width" :class="{'has-error': $v.register_data.email.$error || $v.register_data.email_check.$error}" v-on:keyup.enter="register()">
+              <label>Email</label>
+            </div>
             <button class="positive circular" id="register-button" @click="register()">
               <i>create</i>
             </button>
@@ -78,11 +82,14 @@
 <script>
   import Vue from 'vue'
   import Validations from 'vuelidate'
-  import {required, sameAs, minLength, alphaNum} from 'vuelidate/lib/validators'
+  import {required, sameAs, minLength, alphaNum, email} from 'vuelidate/lib/validators'
   import {Toast} from 'quasar'
   import Horizon from '@horizon/client'
+  import VueResource from 'vue-resource'
+  import api from '../../../apikey.json'
   
   Vue.use(Validations)
+  Vue.use(VueResource)
   
   const horizon = Horizon({host: 'localhost:8181'})
   const app_users = horizon('app_users')
@@ -104,7 +111,8 @@
         register_data: {
           username: '',
           password: '',
-          repeat_password: ''
+          repeat_password: '',
+          email: ''
         },
         users: []
       }
@@ -128,10 +136,21 @@
         username: {required, alphaNum, minLength: minLength(5)},
         password: {required, minLength: minLength(5)},
         repeat_password: {sameAsPassword: sameAs('password')},
+        email: {required, email},
         username_check: {
           username_used () {
             for (var i = 0; i < this.users.length; i++) {
               if (this.users[i].login_data.username === this.register_data.username) {
+                return false
+              }
+            }
+            return true
+          }
+        },
+        email_check: {
+          email_used () {
+            for (var i = 0; i < this.users.length; i++) {
+              if (this.users[i].login_data.username !== 'admin' && this.users[i].email === this.register_data.email) {
                 return false
               }
             }
@@ -177,6 +196,15 @@
         Toast.create.positive('Logged in.')
       },
       register () {
+        // this.$http.post(api.endpoint, undefined, {params: {
+        //   apikey: api.apikey,
+        //   subject: 'Test email',
+        //   from: 'mailer@darklyght.com',
+        //   to: 'kat.liyang@gmail.com',
+        //   text: 'This email sending shit is a success!'
+        // }}).then(success => {
+        // }, failure => {
+        // })
         var login_data = {
           username: this.register_data.username,
           password: this.register_data.password
@@ -202,31 +230,63 @@
                 Toast.create.negative('Passwords do not match. Please check again.')
                 return
               }
+              this.$v.register_data.email.$touch()
+              if (this.$v.register_data.email.$error) {
+                Toast.create.negative('Invalid email. Please check again.')
+                return
+              }
               this.$v.register_data.username_check.$touch()
               if (this.$v.register_data.username_check.$error) {
                 Toast.create.negative('Username has already been taken. Please choose another username.')
                 return
               }
-              app_users.store({
-                id: this.register_data.username,
-                login_data: login_data,
-                theme: 'blue',
-                modules: [[]],
-                shared_with_others: [],
-                shared_with_you: []
+              this.$v.register_data.email_check.$touch()
+              if (this.$v.register_data.email_check.$error) {
+                Toast.create.negative('Email is registered with another account. Please use another email.')
+                return
+              }
+              this.$http.post(api.endpoint, undefined, {params: {
+                apikey: api.apikey,
+                subject: 'Successful Registration on Moduler',
+                from: 'mailer@darklyght.com',
+                to: this.register_data.email,
+                text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i><br />You may now log in with the password you have provided.')
+              }}).then(success => {
+                app_users.store({
+                  id: this.register_data.username,
+                  login_data: login_data,
+                  email: this.register_data.email,
+                  theme: 'blue',
+                  modules: [[]],
+                  shared_with_others: [],
+                  shared_with_you: []
+                })
+                Toast.create.positive('Account has been created successfully. An email has been sent to the registered email address.')
+              }, failure => {
+                Toast.create.negative('There has been an error. Please contact the server administrator.')
               })
-              Toast.create.positive('Account has been created successfully. You may now log in.')
             }
           }
           else {
             if (this.register_data.username === 'admin') {
-              app_users.store({
-                id: this.register_data.username,
-                login_data: login_data,
-                theme: 'blue',
-                registration_enabled: true
+              this.$http.post(api.endpoint, undefined, {params: {
+                apikey: api.apikey,
+                subject: 'Admin Account Created on Moduler',
+                from: 'mailer@darklyght.com',
+                to: this.register_data.email,
+                text: 'An admin account has been registered successfully at http://orbital.darklyght.com.<br />The username of the admin account is <i>admin</i>. <br />You may now log in with the password you have provided.'
+              }}).then(success => {
+                app_users.store({
+                  id: this.register_data.username,
+                  login_data: login_data,
+                  email: this.register_data.email,
+                  theme: 'blue',
+                  registration_enabled: true
+                })
+                Toast.create.positive('Admin account has been created. An email has been sent to the admin email address.')
+              }, failure => {
+                Toast.create.negative('There has been an error. Please contact the server administrator.')
               })
-              Toast.create.positive('Admin account has been created.')
             }
             else {
               Toast.create.negative('Admin account must have username \'admin\'.')
