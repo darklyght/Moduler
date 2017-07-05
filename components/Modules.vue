@@ -782,6 +782,8 @@
           email: '',
           validated: true,
           validation_code: '',
+          reset_state: false,
+          reset_code: '',
           theme: '',
           modules: [[{
             code: '',

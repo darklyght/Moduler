@@ -90,6 +90,14 @@
         <table>
           <tr class="dialog-table">
             <td>
+              <label>Username</label>
+            </td>
+            <td>
+                <input required v-model="forgot_password.username" v-on:keyup.enter="reset_password()" />
+            </td>
+          </tr>
+          <tr class="dialog-table">
+            <td>
               <label>Email Address</label>
             </td>
             <td>
@@ -154,6 +162,7 @@
           email: ''
         },
         forgot_password: {
+          username: '',
           email: ''
         },
         users: []
@@ -237,6 +246,11 @@
           localStorage.setItem('username', this.login_data.username)
         }
         Loading.show()
+        app_users.update({
+          id: this.login_data.username,
+          reset_state: false,
+          reset_code: ''
+        })
         if (sessionStorage['username'] === 'admin') {
           this.$router.push({
             name: 'Admin'
@@ -307,7 +321,7 @@
                   subject: 'Successful Registration on Moduler',
                   from: 'mailer@darklyght.com',
                   to: this.register_data.email,
-                  text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i>.<br />Your validation code is <i>' + validation_code + '</i>.<br />In order to validate your account, please visit http://orbital.darklyght.com/#/validate/' + this.register_data.username + ' and enter your validation code.<br />Alternatively, you may follow this link http://orbital.darklyght.com/#/validate/' + this.register_data.username + '/' + validation_code + ' to activate your account.')
+                  text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br /><br />The username you have provided is <i>' + this.register_data.username + '</i>.<br /><br />Your validation code is <i>' + validation_code + '</i>.<br /><br />In order to validate your account, please visit http://orbital.darklyght.com/#/validate/' + this.register_data.username + ' and enter your validation code.<br /><br />Alternatively, you may follow this link http://orbital.darklyght.com/#/validate/' + this.register_data.username + '/' + validation_code + ' to activate your account.')
                 }
               }).then((response) => {
                 Loading.hide()
@@ -318,6 +332,8 @@
                     email: this.register_data.email,
                     validated: false,
                     validation_code: validation_code,
+                    reset_state: false,
+                    reset_code: '',
                     theme: 'blue',
                     modules: [[]],
                     shared_with_others: [],
@@ -349,15 +365,17 @@
                   subject: 'Admin Account Created on Moduler',
                   from: 'mailer@darklyght.com',
                   to: this.register_data.email,
-                  text: 'An admin account has been registered successfully at http://orbital.darklyght.com.<br />The username of the admin account is <i>admin</i>. <br />You may now log in with the password you have provided.'
+                  text: 'An admin account has been registered successfully at http://orbital.darklyght.com.<br /><br />The username of the admin account is <i>admin</i>. <br /><br />You may now log in with the password you have provided.'
                 }
               }).then((response) => {
                 Loading.hide()
-                if (response.status === 200) {
+                if (response.status === 200 && response.data.status === 'success') {
                   app_users.store({
                     id: this.register_data.username,
                     login_data: login_data,
                     email: this.register_data.email,
+                    reset_state: false,
+                    reset_code: '',
                     theme: 'blue',
                     registration_enabled: true
                   })
@@ -380,6 +398,55 @@
       },
       forgot_password_dialog: function () {
         this.$refs.forgot_password.open()
+      },
+      forgot_password_dialog_close: function () {
+        this.forgot_password.username = ''
+        this.forgot_password.email = ''
+        this.$refs.forgot_password.close()
+      },
+      reset_password: function () {
+        app_users.find(this.forgot_password.username).fetch().subscribe(result => {
+          if (result) {
+            if (result.email === this.forgot_password.email) {
+              Loading.show()
+              var reset_code = make_code()
+              Axios.request({
+                url: smtp_data.endpoint,
+                method: 'post',
+                auth: {
+                  username: 'darklyght',
+                  password: smtp_data.users.darklyght
+                },
+                params: {
+                  subject: 'Password Reset on Moduler',
+                  from: 'mailer@darklyght.com',
+                  to: this.forgot_password.email,
+                  text: ('Your account with username <i>' + this.forgot_password.username + '</i> at http://orbital.darklyght.com has been flagged for a password reset.<br /><br />If you believe this has been done in error, simply proceed to log in.<br /><br />To reset your password, your reset code is <i>' + reset_code + '</i>.<br /><br />In order to reset your password, please visit http://orbital.darklyght.com/#/reset/' + this.forgot_password.username + ' and enter your validation code.<br /><br />Alternatively, you may follow this link http://orbital.darklyght.com/#/reset/' + this.forgot_password.username + '/' + reset_code + ' to reset your password.')
+                }
+              }).then((response) => {
+                Loading.hide()
+                if (response.status === 200 && response.data.status === 'success') {
+                  app_users.update({
+                    id: this.forgot_password.username,
+                    reset_state: true,
+                    reset_code: reset_code
+                  })
+                  Toast.create.positive('An email has been sent to your registered address with further instructions to reset your password.')
+                  this.forgot_password_dialog_close()
+                }
+                else {
+                  Toast.create.negative('There has been an error. Please contact the server administrator.')
+                }
+              })
+            }
+            else {
+              Toast.create.negative('The email you have provided is incorrect. Please check again.')
+            }
+          }
+          else {
+            Toast.create.negative('The username you have entered is not found. Please check again.')
+          }
+        })
       },
       update: function (new_users) {
         this.users = new_users

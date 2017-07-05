@@ -92,6 +92,16 @@ export default new VueRouter({
       component: load('Validate')
     }, // Validation page with code
     {
+      name: 'Reset',
+      path: '/reset/:username',
+      component: load('Reset')
+    }, // Reset page
+    {
+      name: 'Reset Code',
+      path: '/reset/:username/:code',
+      component: load('Reset')
+    }, // Reset page with code
+    {
       path: '*',
       component: load('Error404')
     } // Not found
