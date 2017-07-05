@@ -83,7 +83,7 @@
   import Vue from 'vue'
   import Validations from 'vuelidate'
   import {required, sameAs, minLength, alphaNum, email} from 'vuelidate/lib/validators'
-  import {Toast} from 'quasar'
+  import {Toast, Loading} from 'quasar'
   import Horizon from '@horizon/client'
   import Axios from 'axios'
   import smtp_data from '../../../smtp_api.json'
@@ -179,6 +179,7 @@
         if (this.login_data.remember) {
           localStorage.setItem('username', this.login_data.username)
         }
+        Loading.show()
         if (sessionStorage['username'] === 'admin') {
           this.$router.push({
             name: 'Admin'
@@ -192,6 +193,7 @@
             }
           })
         }
+        Loading.hide()
         Toast.create.positive('Logged in.')
       },
       register () {
@@ -235,6 +237,7 @@
                 Toast.create.negative('Email is registered with another account. Please use another email.')
                 return
               }
+              Loading.show()
               Axios.request({
                 url: smtp_data.endpoint,
                 method: 'post',
@@ -249,6 +252,7 @@
                   text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i><br />You may now log in with the password you have provided.')
                 }
               }).then((response) => {
+                Loading.hide()
                 if (response.status === 200 && response.data.status === 'success') {
                   app_users.store({
                     id: this.register_data.username,
@@ -273,6 +277,7 @@
           }
           else {
             if (this.register_data.username === 'admin') {
+              Loading.show()
               Axios.request({
                 url: smtp_data.endpoint,
                 method: 'post',
@@ -289,6 +294,7 @@
               }).then((response) => {
                 Loading.hide()
                 if (response.status === 200) {
+                  app_users.store({
                     id: this.register_data.username,
                     login_data: login_data,
                     email: this.register_data.email,
