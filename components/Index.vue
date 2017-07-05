@@ -37,6 +37,10 @@
               <q-checkbox v-model="login_data.remember"></q-checkbox>
               <span class="light-paragraph">&nbsp;Remember me</span>
             </label>
+            <br />
+            <button class="blue clear" id="forgot-button" @click="forgot_password_dialog()">
+              <label>Forgot Password</label>
+            </button>
             <button class="positive circular" id="login-button" @click="login()">
               <i>vpn_key</i>
             </button>
@@ -76,6 +80,33 @@
         </div>
       </div>
     </div>
+
+
+
+    <!-- Forgot Password Dialog Modal Definition -->
+    <q-modal class="minimized" ref="forgot_password">
+      <div class="modal-header">Forgot Password</div>
+      <div class="modal-body">
+        <table>
+          <tr class="dialog-table">
+            <td>
+              <label>Email Address</label>
+            </td>
+            <td>
+                <input required v-model="forgot_password.email" v-on:keyup.enter="reset_password()" />
+            </td>
+          </tr>
+          <tr class="dialog-table">
+            <td>
+            </td>
+            <td align="right">
+              <button class="negative clear" style="text-decoration: underline" @click="forgot_password_dialog_close()">Close</button>
+              <button class="positive" @click="reset_password()">Reset</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </q-modal>
   </div>
 </template>
 
@@ -111,6 +142,9 @@
           username: '',
           password: '',
           repeat_password: '',
+          email: ''
+        },
+        forgot_password: {
           email: ''
         },
         users: []
@@ -318,6 +352,9 @@
           }
         })
       },
+      forgot_password_dialog: function () {
+        this.$refs.forgot_password.open()
+      },
       update: function (new_users) {
         this.users = new_users
         for (var i = 0; i < this.users.length; i++) {
@@ -337,6 +374,10 @@
 </script>
 
 <style lang="styl">
+table tr td a
+  display block
+  height 100%
+  width 100%
 #login-container
   max-width 900px
   min-height 100vh
@@ -347,6 +388,15 @@
   float right
   margin-top 20px
   margin-bottom 20px
+#forgot-button
+  float left
+  margin-top 30px
+  margin-bottom 20px
+.q-checkbox input:checked + div:before
+  background-color #027be3
+  border-color #027be3
+.dialog-table
+  height 40px
 body
   background-color darkgrey
 :root
