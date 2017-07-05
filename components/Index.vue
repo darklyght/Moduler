@@ -128,6 +128,15 @@
     timeout: 3000
   })
   
+  function make_code () {
+    var text = ''
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    for (var i = 0; i < 5; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length))
+    }
+    return text
+  }
+
   export default {
     name: 'Index',
     data () {
@@ -162,6 +171,15 @@
               }
             }
             return false
+          }
+        },
+        validated_check: {
+          validated () {
+            for (var i = 0; i < this.users.length; i++) {
+              if (this.users[i].login_data.username === this.login_data.username) {
+                return this.users[i].validated
+              }
+            }
           }
         }
       },
@@ -202,6 +220,11 @@
         this.$v.login_data.password.$touch()
         if (this.$v.login_data.password.$error) {
           Toast.create.negative('Password field cannot be empty.')
+          return
+        }
+        this.$v.login_data.validated_check.$touch()
+        if (this.$v.login_data.validated_check.$error) {
+          Toast.create.negative('Account has not been validated. Please check your registered email for validation instructions.')
           return
         }
         this.$v.login_data.password_check.$touch()
@@ -272,6 +295,7 @@
                 return
               }
               Loading.show()
+              var validation_code = make_code()
               Axios.request({
                 url: smtp_data.endpoint,
                 method: 'post',
@@ -283,7 +307,7 @@
                   subject: 'Successful Registration on Moduler',
                   from: 'mailer@darklyght.com',
                   to: this.register_data.email,
-                  text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i><br />You may now log in with the password you have provided.')
+                  text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i>.<br />Your validation code is <i>' + validation_code + '</i>.<br />In order to validate your account, please visit http://orbital.darklyght.com/#/validate/' + this.register_data.username + ' and enter your validation code.<br />Alternatively, you may follow this link http://orbital.darklyght.com/#/validate/' + this.register_data.username + '/' + validation_code + ' to activate your account.')
                 }
               }).then((response) => {
                 Loading.hide()
@@ -292,6 +316,8 @@
                     id: this.register_data.username,
                     login_data: login_data,
                     email: this.register_data.email,
+                    validated: false,
+                    validation_code: validation_code,
                     theme: 'blue',
                     modules: [[]],
                     shared_with_others: [],

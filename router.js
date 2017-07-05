@@ -82,6 +82,16 @@ export default new VueRouter({
       // }
     },
     {
+      name: 'Validate',
+      path: '/validate/:username',
+      component: load('Validate')
+    }, // Validation page
+    {
+      name: 'Validate Code',
+      path: '/validate/:username/:code',
+      component: load('Validate')
+    }, // Validation page with code
+    {
       path: '*',
       component: load('Error404')
     } // Not found

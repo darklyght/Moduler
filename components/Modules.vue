@@ -779,6 +779,9 @@
             username: '',
             password: ''
           },
+          email: '',
+          validated: true,
+          validation_code: '',
           theme: '',
           modules: [[{
             code: '',
