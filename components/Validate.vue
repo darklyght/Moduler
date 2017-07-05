@@ -105,6 +105,8 @@
   float left
   margin-top 30px
   margin-bottom 20px
+input:not(.no-style), textarea:not(.no-style), .textfield:not(.no-style)
+  border-bottom 2px solid #999
 body
   background-color darkgrey
 :root

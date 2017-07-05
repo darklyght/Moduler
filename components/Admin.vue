@@ -241,6 +241,8 @@ table.q-table.responsive:not(.flipped) tr, table.q-table.responsive:not(.flipped
   border-color #777777
 .q-checkbox input + div:before
   border-color #777777
+input:not(.no-style), textarea:not(.no-style), .textfield:not(.no-style)
+  border-bottom 2px solid #999
 /*.modal.minimized .modal-content
   background-color var(--theme-color1)*/
 th

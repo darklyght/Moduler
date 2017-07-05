@@ -513,6 +513,29 @@
             </div>
             <div class="card" :class="theme_bg">
               <div class="card-title">
+                <h5>Change Password</h5>
+              </div>
+              <div class="card-content">
+                Enter your current password and new password to change your password.
+                <div class="floating-label">
+                  <input required type="password" v-model="change_password_data.old_password" class="full-width" :class="{'has-error': $v.change_password_data.old_password_check.$error}" v-on:keyup.enter="change_password()">
+                  <label>Current Password</label>
+                </div>
+                <div class="floating-label">
+                  <input required type="password" v-model="change_password_data.new_password" class="full-width" :class="{'has-error': $v.change_password_data.new_password.$error}" v-on:keyup.enter="change_password()">
+                  <label>New Password</label>
+                </div>
+                <div class="floating-label">
+                  <input required type="password" v-model="change_password_data.repeat_new_password" class="full-width" :class="{'has-error': $v.change_password_data.repeat_new_password.$error}" v-on:keyup.enter="change_password()">
+                  <label>Repeat New Password</label>
+                </div>
+                <button class="positive right-button" @click="change_password()">
+                  Change Password
+                </button>
+              </div>
+            </div>
+            <div class="card" :class="theme_bg">
+              <div class="card-title">
                 <h5>Delete Account</h5>
               </div>
               <div class="card-content">
@@ -747,7 +770,8 @@
 <script>
   import Vue from 'vue'
   import Validations from 'vuelidate'
-  import {Utils, Dialog, Toast} from 'quasar'
+  import {required, sameAs, minLength} from 'vuelidate/lib/validators'
+  import {Utils, Toast} from 'quasar'
   import Horizon from '@horizon/client'
   import Modules from './modules.json'
   
@@ -1372,12 +1396,31 @@
           tab: 'modules',
           format: 'png'
         },
+        change_password_data: {
+          old_password: '',
+          new_password: '',
+          repeat_new_password: ''
+        },
         delete_data: {
           username: ''
         }
       }
     },
     validations: {
+      change_password_data: {
+        new_password: {required, minLength: minLength(5)},
+        repeat_new_password: {sameAsPassword: sameAs('new_password')},
+        old_password_check: {
+          password_same () {
+            if (this.user.login_data.password === this.change_password_data.old_password) {
+              return true
+            }
+            else {
+              return false
+            }
+          }
+        }
+      },
       delete_data: {
         username_check: {
           username_same () {
@@ -1472,6 +1515,146 @@
         Toast.create.positive('Module ' + this.edit_data.code + ' saved.')
         this.$refs.edit_dialog.close()
       },
+      autocomplete (terms, done) {
+        setTimeout(() => {
+          done(Utils.filter(terms, {field: 'value', list: parse_modules()}))
+        }, 150)
+      },
+      su_activate (selection) {
+        selection.rows.forEach(row => {
+          if (row.data.su_option === false) {
+            row.data.su_option = true
+            if (row.data.grade === 'D' || row.data.grade === 'D+' || row.data.grade === 'F') {
+              row.data.final_grade = 'U'
+            }
+            else {
+              row.data.final_grade = 'S'
+            }
+          }
+        })
+        app_users.update({
+          id: sessionStorage['username'],
+          modules: this.user.modules
+        })
+        Toast.create.positive('S/U option exercised on ' + selection.rows.length + ' module(s).')
+      },
+      su_deactivate (selection) {
+        selection.rows.forEach(row => {
+          if (row.data.su_option === true) {
+            row.data.su_option = false
+            row.data.final_grade = row.data.grade
+          }
+        })
+        app_users.update({
+          id: sessionStorage['username'],
+          modules: this.user.modules
+        })
+        Toast.create.positive('S/U option removed on ' + selection.rows.length + ' module(s).')
+      },
+      delete_modules (selection) {
+        for (var i = selection.rows.length - 1; i >= 0; i--) {
+          this.user.modules[this.modules.semester - 1].splice(selection.rows[i].index, 1)
+        }
+        app_users.update({
+          id: sessionStorage['username'],
+          modules: this.user.modules
+        })
+        Toast.create.positive(selection.rows.length + ' module(s) deleted.')
+      },
+      add_semester () {
+        this.user.modules.splice(this.modules.semester, 0, [])
+        this.modules.semester = this.modules.semester + 1
+        app_users.update({
+          id: sessionStorage['username'],
+          modules: this.user.modules
+        })
+        Toast.create.positive('Semester ' + this.modules.semester + ' added.')
+      },
+      remove_semester () {
+        if (this.modules.semester === 1) {
+          Toast.create.negative('Cannot delete the first semester.')
+          return
+        }
+        this.modules.semester = this.modules.semester - 1
+        this.user.modules.splice(this.modules.semester, 1)
+        app_users.update({
+          id: sessionStorage['username'],
+          modules: this.user.modules
+        })
+        Toast.create.positive('Semester ' + (this.modules.semester + 1) + ' removed.')
+      },
+      //
+      //
+      //
+      // Sharing Tab Methods
+      add_shared_with_others_dialog () {
+        this.$refs.add_share.open()
+      },
+      add_shared_with_others () {
+        app_users.find(this.add_share.id).fetch().subscribe(result => {
+          if (result && this.user.shared_with_others.indexOf(result.id) === -1) {
+            this.user.shared_with_others.push(result.id)
+            result.shared_with_you.push(this.user.id)
+            app_users.update({
+              id: this.user.id,
+              shared_with_others: this.user.shared_with_others
+            })
+            app_users.update({
+              id: result.id,
+              shared_with_you: result.shared_with_you
+            })
+            Toast.create.positive('Shared your module plan with ' + this.add_share.id + '.')
+            this.add_shared_with_others_dialog_close()
+          }
+          else if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
+            Toast.create.negative('Module plan already shared with ' + result.id)
+          }
+          else {
+            Toast.create.negative('User cannot be found')
+          }
+        })
+      },
+      add_shared_with_others_dialog_close () {
+        this.add_share.id = ''
+        this.$refs.add_share.close()
+      },
+      remove_shared_with_others (index) {
+        var id = this.user.shared_with_others[index]
+        app_users.find(id).fetch().subscribe(result => {
+          if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
+            this.user.shared_with_others.splice(index, 1)
+            result.shared_with_you.splice(result.shared_with_you.indexOf(this.user.id), 1)
+            app_users.update({
+              id: this.user.id,
+              shared_with_others: this.user.shared_with_others
+            })
+            app_users.update({
+              id: result.id,
+              shared_with_you: result.shared_with_you
+            })
+            Toast.create.positive('Unshared your module plan with ' + result.id + '.')
+            this.add_shared_with_others_dialog_close()
+          }
+          else {
+            Toast.create.negative('User cannot be found')
+          }
+        })
+      },
+      view_shared_with_you (index) {
+        var id = this.user.shared_with_you[index]
+        window.open('http://localhost:8080/#/view/' + id, '_blank')
+        app_users.find(id).fetch().subscribe(result => {
+          if (result && result.shared_with_others.indexOf(this.user.id) === -1) {
+            Toast.create.negative('An authorisation error has occurred. Refresh the page and try again.')
+          }
+        })
+      },
+      remove_shared_with_you () {
+      },
+      //
+      //
+      //
+      // Options Tab Methods
       download () {
         if (this.download_options.tab === 'modules') {
           if (this.download_options.format === 'csv') {
@@ -1694,146 +1877,6 @@
         download_link.click()
         document.body.removeChild(download_link)
       },
-      autocomplete (terms, done) {
-        setTimeout(() => {
-          done(Utils.filter(terms, {field: 'value', list: parse_modules()}))
-        }, 150)
-      },
-      su_activate (selection) {
-        selection.rows.forEach(row => {
-          if (row.data.su_option === false) {
-            row.data.su_option = true
-            if (row.data.grade === 'D' || row.data.grade === 'D+' || row.data.grade === 'F') {
-              row.data.final_grade = 'U'
-            }
-            else {
-              row.data.final_grade = 'S'
-            }
-          }
-        })
-        app_users.update({
-          id: sessionStorage['username'],
-          modules: this.user.modules
-        })
-        Toast.create.positive('S/U option exercised on ' + selection.rows.length + ' module(s).')
-      },
-      su_deactivate (selection) {
-        selection.rows.forEach(row => {
-          if (row.data.su_option === true) {
-            row.data.su_option = false
-            row.data.final_grade = row.data.grade
-          }
-        })
-        app_users.update({
-          id: sessionStorage['username'],
-          modules: this.user.modules
-        })
-        Toast.create.positive('S/U option removed on ' + selection.rows.length + ' module(s).')
-      },
-      delete_modules (selection) {
-        for (var i = selection.rows.length - 1; i >= 0; i--) {
-          this.user.modules[this.modules.semester - 1].splice(selection.rows[i].index, 1)
-        }
-        app_users.update({
-          id: sessionStorage['username'],
-          modules: this.user.modules
-        })
-        Toast.create.positive(selection.rows.length + ' module(s) deleted.')
-      },
-      add_semester () {
-        this.user.modules.splice(this.modules.semester, 0, [])
-        this.modules.semester = this.modules.semester + 1
-        app_users.update({
-          id: sessionStorage['username'],
-          modules: this.user.modules
-        })
-        Toast.create.positive('Semester ' + this.modules.semester + ' added.')
-      },
-      remove_semester () {
-        if (this.modules.semester === 1) {
-          Toast.create.negative('Cannot delete the first semester.')
-          return
-        }
-        this.modules.semester = this.modules.semester - 1
-        this.user.modules.splice(this.modules.semester, 1)
-        app_users.update({
-          id: sessionStorage['username'],
-          modules: this.user.modules
-        })
-        Toast.create.positive('Semester ' + (this.modules.semester + 1) + ' removed.')
-      },
-      //
-      //
-      //
-      // Sharing Tab Methods
-      add_shared_with_others_dialog () {
-        this.$refs.add_share.open()
-      },
-      add_shared_with_others () {
-        app_users.find(this.add_share.id).fetch().subscribe(result => {
-          if (result && this.user.shared_with_others.indexOf(result.id) === -1) {
-            this.user.shared_with_others.push(result.id)
-            result.shared_with_you.push(this.user.id)
-            app_users.update({
-              id: this.user.id,
-              shared_with_others: this.user.shared_with_others
-            })
-            app_users.update({
-              id: result.id,
-              shared_with_you: result.shared_with_you
-            })
-            Toast.create.positive('Shared your module plan with ' + this.add_share.id + '.')
-            this.add_shared_with_others_dialog_close()
-          }
-          else if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
-            Toast.create.negative('Module plan already shared with ' + result.id)
-          }
-          else {
-            Toast.create.negative('User cannot be found')
-          }
-        })
-      },
-      add_shared_with_others_dialog_close () {
-        this.add_share.id = ''
-        this.$refs.add_share.close()
-      },
-      remove_shared_with_others (index) {
-        var id = this.user.shared_with_others[index]
-        app_users.find(id).fetch().subscribe(result => {
-          if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
-            this.user.shared_with_others.splice(index, 1)
-            result.shared_with_you.splice(result.shared_with_you.indexOf(this.user.id), 1)
-            app_users.update({
-              id: this.user.id,
-              shared_with_others: this.user.shared_with_others
-            })
-            app_users.update({
-              id: result.id,
-              shared_with_you: result.shared_with_you
-            })
-            Toast.create.positive('Unshared your module plan with ' + result.id + '.')
-            this.add_shared_with_others_dialog_close()
-          }
-          else {
-            Toast.create.negative('User cannot be found')
-          }
-        })
-      },
-      view_shared_with_you (index) {
-        var id = this.user.shared_with_you[index]
-        window.open('http://localhost:8080/#/view/' + id, '_blank')
-        app_users.find(id).fetch().subscribe(result => {
-          if (result && result.shared_with_others.indexOf(this.user.id) === -1) {
-            Toast.create.negative('An authorisation error has occurred. Refresh the page and try again.')
-          }
-        })
-      },
-      remove_shared_with_you () {
-      },
-      //
-      //
-      //
-      // Options Tab Methods
       update_theme () {
         var color1 = ''
         var color2 = ''
@@ -1881,13 +1924,36 @@
         })
         Toast.create.positive('Theme saved.')
       },
+      change_password () {
+        this.$v.change_password_data.old_password_check.$touch()
+        if (this.$v.change_password_data.old_password_check.$error) {
+          Toast.create.negative('Current password is incorrect. Please check again.')
+          return
+        }
+        this.$v.change_password_data.new_password.$touch()
+        if (this.$v.change_password_data.new_password.$error) {
+          Toast.create.negative('Password must be at least 5 characters long.')
+          return
+        }
+        this.$v.change_password_data.repeat_new_password.$touch()
+        if (this.$v.change_password_data.repeat_new_password.$error) {
+          Toast.create.negative('Passwords do not match. Please check again.')
+          return
+        }
+        var login_data = {
+          username: this.user.login_data.username,
+          password: this.change_password_data.new_password
+        }
+        app_users.update({
+          id: this.user.id,
+          login_data: login_data
+        })
+        Toast.create.positive('Password has been updated.')
+      },
       delete_account () {
         this.$v.delete_data.username_check.$touch()
         if (this.$v.delete_data.username_check.$error) {
-          Dialog.create({
-            title: 'Error',
-            message: 'Username is incorrect. Please try again.'
-          })
+          Toast.create.negative('Username is incorrect. Please check again.')
           return
         }
         app_users.remove(sessionStorage['username'])
@@ -2456,6 +2522,8 @@ table.q-table.responsive:not(.flipped) tr, table.q-table.responsive:not(.flipped
   border-color #777777
 .q-checkbox input + div:before
   border-color #777777
+input:not(.no-style), textarea:not(.no-style), .textfield:not(.no-style)
+  border-bottom 2px solid #999
 /*.modal.minimized .modal-content
   background-color var(--theme-color1)*/
 th

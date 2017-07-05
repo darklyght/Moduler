@@ -490,6 +490,8 @@ table tr td a
   border-color #027be3
 .dialog-table
   height 40px
+input:not(.no-style), textarea:not(.no-style), .textfield:not(.no-style)
+  border-bottom 2px solid #999
 body
   background-color darkgrey
 :root
