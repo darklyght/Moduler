@@ -85,11 +85,10 @@
   import {required, sameAs, minLength, alphaNum, email} from 'vuelidate/lib/validators'
   import {Toast} from 'quasar'
   import Horizon from '@horizon/client'
-  import VueResource from 'vue-resource'
-  import api from '../../../apikey.json'
+  import Axios from 'axios'
+  import smtp_data from '../../../smtp_api.json'
   
   Vue.use(Validations)
-  Vue.use(VueResource)
   
   const horizon = Horizon({host: 'localhost:8181'})
   const app_users = horizon('app_users')
@@ -196,15 +195,6 @@
         Toast.create.positive('Logged in.')
       },
       register () {
-        // this.$http.post(api.endpoint, undefined, {params: {
-        //   apikey: api.apikey,
-        //   subject: 'Test email',
-        //   from: 'mailer@darklyght.com',
-        //   to: 'kat.liyang@gmail.com',
-        //   text: 'This email sending shit is a success!'
-        // }}).then(success => {
-        // }, failure => {
-        // })
         var login_data = {
           username: this.register_data.username,
           password: this.register_data.password
@@ -245,47 +235,75 @@
                 Toast.create.negative('Email is registered with another account. Please use another email.')
                 return
               }
-              this.$http.post(api.endpoint, undefined, {params: {
-                apikey: api.apikey,
-                subject: 'Successful Registration on Moduler',
-                from: 'mailer@darklyght.com',
-                to: this.register_data.email,
-                text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i><br />You may now log in with the password you have provided.')
-              }}).then(success => {
-                app_users.store({
-                  id: this.register_data.username,
-                  login_data: login_data,
-                  email: this.register_data.email,
-                  theme: 'blue',
-                  modules: [[]],
-                  shared_with_others: [],
-                  shared_with_you: []
-                })
-                Toast.create.positive('Account has been created successfully. An email has been sent to the registered email address.')
-              }, failure => {
-                Toast.create.negative('There has been an error. Please contact the server administrator.')
+              Axios.request({
+                url: smtp_data.endpoint,
+                method: 'post',
+                auth: {
+                  username: 'darklyght',
+                  password: smtp_data.users.darklyght
+                },
+                params: {
+                  subject: 'Successful Registration on Moduler',
+                  from: 'mailer@darklyght.com',
+                  to: this.register_data.email,
+                  text: ('Your account has been registered successfully at http://orbital.darklyght.com.<br />The username you have provided is <i>' + this.register_data.username + '</i><br />You may now log in with the password you have provided.')
+                }
+              }).then((response) => {
+                if (response.status === 200 && response.data.status === 'success') {
+                  app_users.store({
+                    id: this.register_data.username,
+                    login_data: login_data,
+                    email: this.register_data.email,
+                    theme: 'blue',
+                    modules: [[]],
+                    shared_with_others: [],
+                    shared_with_you: []
+                  })
+                  Toast.create.positive('Account has been created successfully. An email has been sent to the registered email address.')
+                  this.register_data.username = ''
+                  this.register_data.password = ''
+                  this.register_data.repeat_password = ''
+                  this.register_data.email = ''
+                }
+                else {
+                  Toast.create.negative('There has been an error. Please contact the server administrator.')
+                }
               })
             }
           }
           else {
             if (this.register_data.username === 'admin') {
-              this.$http.post(api.endpoint, undefined, {params: {
-                apikey: api.apikey,
-                subject: 'Admin Account Created on Moduler',
-                from: 'mailer@darklyght.com',
-                to: this.register_data.email,
-                text: 'An admin account has been registered successfully at http://orbital.darklyght.com.<br />The username of the admin account is <i>admin</i>. <br />You may now log in with the password you have provided.'
-              }}).then(success => {
-                app_users.store({
-                  id: this.register_data.username,
-                  login_data: login_data,
-                  email: this.register_data.email,
-                  theme: 'blue',
-                  registration_enabled: true
-                })
-                Toast.create.positive('Admin account has been created. An email has been sent to the admin email address.')
-              }, failure => {
-                Toast.create.negative('There has been an error. Please contact the server administrator.')
+              Axios.request({
+                url: smtp_data.endpoint,
+                method: 'post',
+                auth: {
+                  username: 'darklyght',
+                  password: smtp_data.users.darklyght
+                },
+                params: {
+                  subject: 'Admin Account Created on Moduler',
+                  from: 'mailer@darklyght.com',
+                  to: this.register_data.email,
+                  text: 'An admin account has been registered successfully at http://orbital.darklyght.com.<br />The username of the admin account is <i>admin</i>. <br />You may now log in with the password you have provided.'
+                }
+              }).then((response) => {
+                Loading.hide()
+                if (response.status === 200) {
+                    id: this.register_data.username,
+                    login_data: login_data,
+                    email: this.register_data.email,
+                    theme: 'blue',
+                    registration_enabled: true
+                  })
+                  Toast.create.positive('Admin account has been created. An email has been sent to the admin email address.')
+                  this.register_data.username = ''
+                  this.register_data.password = ''
+                  this.register_data.repeat_password = ''
+                  this.register_data.email = ''
+                }
+                else {
+                  Toast.create.negative('There has been an error. Please contact the server administrator.')
+                }
               })
             }
             else {
