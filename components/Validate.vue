@@ -7,7 +7,7 @@
         </div>
         <div class="card-content">
           <div class="floating-label">
-            <input required type="text" v-model="validation_code" class="full-width" v-on:keyup.enter="validate()">
+            <input required type="text" v-model="validation_code" class="full-width no-border" v-on:keyup.enter="validate()">
             <label>Validation Code</label>
           </div>
           <button class="positive" id="validate-button" @click="validate()">
