@@ -1529,7 +1529,8 @@
           }
           else if (this.add_data.grade !== 'Planned') {
             new_module.final_grade = 'S'
-          } else {
+          }
+          else {
             new_module.final_grade = 'Planned'
           }
         }
@@ -1613,7 +1614,8 @@
             }
             else if (row.data.grade !== 'Planned') {
               row.data.final_grade = 'S'
-            } else {
+            }
+            else {
               row.data.final_grade = 'Planned'
             }
           }
