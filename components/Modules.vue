@@ -618,7 +618,7 @@
             </td>
             <td>
               <q-autocomplete v-model="add_data.code" @search="autocomplete" :delay="0">
-                  <input required v-model="add_data.code"/>
+                  <input required v-model="add_data.code" v-on:keyup.enter="add_module()"/>
               </q-autocomplete>
             </td>
           </tr>
@@ -698,7 +698,7 @@
             </td>
             <td>
               <q-autocomplete v-model="edit_data.code" @search="autocomplete">
-                  <input required v-model="edit_data.code"/>
+                  <input required v-model="edit_data.code" v-on:keyup.enter="update_module()"/>
               </q-autocomplete>
             </td>
           </tr>
@@ -1407,6 +1407,36 @@
       }
     },
     validations: {
+      add_data: {
+        code: {required},
+        code_check: {
+          module_code_unique () {
+            for (var i = 0; i < this.user.modules.length; i++) {
+              for (var j = 0; j < this.user.modules[i].length; j++) {
+                if (this.add_data.code === this.user.modules[i][j].code) {
+                  return false
+                }
+              }
+            }
+            return true
+          }
+        }
+      },
+      edit_data: {
+        code: {required},
+        code_check: {
+          module_code_unique () {
+            for (var i = 0; i < this.user.modules.length; i++) {
+              for (var j = 0; j < this.user.modules[i].length; j++) {
+                if (this.edit_data.code === this.user.modules[i][j].code) {
+                  return false
+                }
+              }
+            }
+            return true
+          }
+        }
+      },
       change_password_data: {
         new_password: {required, minLength: minLength(5)},
         repeat_new_password: {sameAsPassword: sameAs('new_password')},
@@ -1443,6 +1473,16 @@
         this.$refs.add_dialog.open()
       },
       add_module () {
+        this.$v.add_data.code.$touch()
+        if (this.$v.add_data.code.$error) {
+          Toast.create.negative('Module code is a required field.')
+          return
+        }
+        this.$v.add_data.code_check.$touch()
+        if (this.$v.add_data.code_check.$error) {
+          Toast.create.negative('You have already taken this module. Please check again.')
+          return
+        }
         var new_module = {
           code: this.add_data.code,
           credits: this.add_data.credits,
@@ -1492,6 +1532,16 @@
         this.$refs.edit_dialog.open()
       },
       update_module () {
+        this.$v.edit_data.code.$touch()
+        if (this.$v.edit_data.code.$error) {
+          Toast.create.negative('Module code is a required field.')
+          return
+        }
+        this.$v.edit_data.code_check.$touch()
+        if (this.$v.edit_data.code_check.$error) {
+          Toast.create.negative('You have already taken this module. Please check again.')
+          return
+        }
         this.user.modules[this.modules.semester - 1][this.edit_data.index].code = this.edit_data.code
         this.user.modules[this.modules.semester - 1][this.edit_data.index].credits = this.edit_data.credits
         this.user.modules[this.modules.semester - 1][this.edit_data.index].type = this.edit_data.type
