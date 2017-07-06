@@ -513,6 +513,24 @@
             </div>
             <div class="card" :class="theme_bg">
               <div class="card-title">
+                <h5>API Key</h5>
+              </div>
+              <div class="card-content">
+                The API key can be used with the Moduler API. Please keep it safe.
+                <div class="floating-label">
+                  <textarea readonly v-model="user.api_key" class="full-width no-border" id="api-copy-area">
+                  </textarea>
+                </div>
+                <button class="negative right-button" @click="regenerate_api_key()">
+                  Regenerate
+                </button>
+                <button class="positive right-button" @click="copy_api_key()" id="api-copy-button">
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="card" :class="theme_bg">
+              <div class="card-title">
                 <h5>Change Password</h5>
               </div>
               <div class="card-content">
@@ -529,7 +547,7 @@
                   <input required type="password" v-model="change_password_data.repeat_new_password" class="full-width" :class="{'has-error': $v.change_password_data.repeat_new_password.$error}" v-on:keyup.enter="change_password()">
                   <label>Repeat New Password</label>
                 </div>
-                <button class="positive right-button" @click="change_password()">
+                <button class="negative right-button" @click="change_password()">
                   Change Password
                 </button>
               </div>
@@ -789,6 +807,19 @@
     })
   }
 
+  function uuid () {
+    var d = new Date().getTime()
+    if (window.performance && typeof window.performance.now === 'function') {
+      d += performance.now()
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0
+      d = Math.floor(d / 16)
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+    return uuid
+  }
+
   export default {
     name: 'Modules',
     data () {
@@ -808,6 +839,7 @@
           validation_code: '',
           reset_state: false,
           reset_code: '',
+          api_key: '',
           theme: '',
           modules: [[{
             code: '',
@@ -1974,6 +2006,17 @@
         })
         Toast.create.positive('Theme saved.')
       },
+      copy_api_key () {
+        document.querySelector('#api-copy-area').select()
+        document.execCommand('copy')
+        Toast.create.positive('API key copied to clipboard.')
+      },
+      regenerate_api_key () {
+        app_users.update({
+          id: this.user.id,
+          api_key: uuid()
+        })
+      },
       change_password () {
         this.$v.change_password_data.old_password_check.$touch()
         if (this.$v.change_password_data.old_password_check.$error) {
@@ -2539,6 +2582,7 @@ table tr td a
   float right
   margin-top 20px
   margin-bottom 20px
+  margin-left 10px
 .dialog-table
   height 40px
 .q-data-table
