@@ -518,8 +518,7 @@
               <div class="card-content">
                 The API key can be used with the Moduler API. Please keep it safe.
                 <div class="floating-label">
-                  <textarea readonly v-model="user.api_key" class="full-width no-border" id="api-copy-area">
-                  </textarea>
+                  <input readonly v-model="user.api_key" class="full-width no-border" id="api-copy-area">
                 </div>
                 <button class="negative right-button" @click="regenerate_api_key()">
                   Regenerate
@@ -536,15 +535,15 @@
               <div class="card-content">
                 Enter your current password and new password to change your password.
                 <div class="floating-label">
-                  <input required type="password" v-model="change_password_data.old_password" class="full-width" :class="{'has-error': $v.change_password_data.old_password_check.$error}" v-on:keyup.enter="change_password()">
+                  <input required type="password" v-model="change_password_data.old_password" class="full-width no-border" :class="{'has-error': $v.change_password_data.old_password_check.$error}" v-on:keyup.enter="change_password()">
                   <label>Current Password</label>
                 </div>
                 <div class="floating-label">
-                  <input required type="password" v-model="change_password_data.new_password" class="full-width" :class="{'has-error': $v.change_password_data.new_password.$error}" v-on:keyup.enter="change_password()">
+                  <input required type="password" v-model="change_password_data.new_password" class="full-width no-border" :class="{'has-error': $v.change_password_data.new_password.$error}" v-on:keyup.enter="change_password()">
                   <label>New Password</label>
                 </div>
                 <div class="floating-label">
-                  <input required type="password" v-model="change_password_data.repeat_new_password" class="full-width" :class="{'has-error': $v.change_password_data.repeat_new_password.$error}" v-on:keyup.enter="change_password()">
+                  <input required type="password" v-model="change_password_data.repeat_new_password" class="full-width no-border" :class="{'has-error': $v.change_password_data.repeat_new_password.$error}" v-on:keyup.enter="change_password()">
                   <label>Repeat New Password</label>
                 </div>
                 <button class="negative right-button" @click="change_password()">
@@ -559,7 +558,7 @@
               <div class="card-content">
                 Enter your username into the textbox to confirm deletion of this account.
                 <div class="floating-label">
-                  <input required type="text" v-model="delete_data.username" class="full-width" :class="{'has-error': $v.delete_data.username_check.$error}" v-on:keyup.enter="delete_account()">
+                  <input required type="text" v-model="delete_data.username" class="full-width no-border" :class="{'has-error': $v.delete_data.username_check.$error}" v-on:keyup.enter="delete_account()">
                   <label>Username</label>
                 </div>
                 <button class="negative right-button" @click="delete_account()">

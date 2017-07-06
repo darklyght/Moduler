@@ -26,6 +26,28 @@
             <h4><span class="uppercase text-bold">Users</span></h4>
           </div>
           <div class="card-content">
+            <div class="card" :class="theme_bg">
+              <div class="card-title">
+                <div class="title-inline">
+                  <div class="right-inline">
+                    <button class="primary circular positive" @click="add_user()">
+                      <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, -5]">Add User</q-tooltip>
+                      <i>add</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-content">
+                <q-data-table :data="users.all_users" :config="users.config" :columns="users.columns" ref="modules_table" id="modules_table">
+                  <template slot="selection" scope="selection">
+                    <button class="clear" @click="delete_users(selection)">
+                      <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, -5]">Delete</q-tooltip>
+                      <i>delete</i>
+                    </button>
+                  </template>
+                </q-data-table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -92,10 +114,58 @@
             username: '',
             password: ''
           },
+          email: '',
+          validated: true,
+          validation_code: '',
+          reset_state: false,
+          reset_code: '',
           theme: '',
           registration_enabled: true
         },
-        users: []
+        users: {
+          all_users: [],
+          config: {
+            title: '&nbsp;',
+            rowHeight: '50px',
+            responsive: true,
+            selection: 'multiple',
+            messages: {
+              noData: '<i>warning</i> No users to show. Add a user first.',
+              noDataAfterFiltering: '<i>warning</i> No results. Please refine your search terms.'
+            }
+          },
+          columns: [
+            {
+              label: 'Username',
+              field: 'id',
+              width: '75px',
+              classes: this.table_bg,
+              sort: 'string'
+            },
+            {
+              label: 'Email',
+              field: 'email',
+              width: '75px',
+              classes: this.table_bg,
+              sort: 'string'
+            },
+            {
+              label: 'Validated',
+              field: 'validated',
+              width: '50px',
+              classes: this.table_bg,
+              sort: 'boolean',
+              format (value) {
+                if (value) {
+                  return 'Yes'
+                }
+                else {
+                  return 'No'
+                }
+              }
+            }
+          ]
+        }
       }
     },
     computed: {
@@ -139,11 +209,52 @@
       //
       //
       // Universal Methods
+      update_theme () {
+        var color1 = ''
+        var color2 = ''
+        var color3 = ''
+        switch (this.user.theme) {
+          case 'pink':
+            color1 = 'rgba(248, 187, 208, 1.0)'
+            color2 = 'rgba(136, 14, 79, 1.0)'
+            color3 = 'rgba(136, 14, 79, 0.2)'
+            break
+          case 'indigo':
+            color1 = 'rgba(197, 202, 233, 1.0)'
+            color2 = 'rgba(26, 35, 126, 1.0)'
+            color3 = 'rgba(26, 35, 126, 0.2)'
+            break
+          case 'blue':
+            color1 = 'rgba(187, 222, 251, 1.0)'
+            color2 = 'rgba(13, 17, 161, 1.0)'
+            color3 = 'rgba(13, 17, 161, 0.2)'
+            break
+          case 'teal':
+            color1 = 'rgba(178, 223, 219, 1.0)'
+            color2 = 'rgba(0, 77, 64, 1.0)'
+            color3 = 'rgba(0, 77, 64, 0.2)'
+            break
+          case 'orange':
+            color1 = 'rgba(255, 224, 178, 1.0)'
+            color2 = 'rgba(230, 81, 0, 1.0)'
+            color3 = 'rgba(230, 81, 0, 0.2)'
+            break
+          case 'blue-grey':
+            color1 = 'rgba(207, 216, 220, 1.0)'
+            color2 = 'rgba(69, 90, 100, 1.0)'
+            color3 = 'rgba(69, 90, 100, 0.2)'
+            break
+        }
+        document.body.style.setProperty('--theme-color1', color1)
+        document.body.style.setProperty('--theme-color2', color2)
+        document.body.style.setProperty('--theme-color3', color3)
+      },
       update (updated_info) {
-        this.users = updated_info
+        this.users.all_users = updated_info
       },
       update_admin (updated_info) {
         this.user = updated_info
+        this.update_theme()
       }
     },
     beforeRouteEnter (to, from, next) {

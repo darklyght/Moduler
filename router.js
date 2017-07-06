@@ -55,19 +55,19 @@ export default new VueRouter({
         }
       }
     }, // Modules page
-    {
-      name: 'Admin',
-      path: '/admin',
-      component: load('Admin'),
-      beforeEnter: (to, from, next) => {
-        if (from.path === '/' || sessionStorage['username']) {
-          next()
-        }
-        else {
-          next(false)
-        }
-      }
-    }, // Admin page
+    // {
+    //   name: 'Admin',
+    //   path: '/admin',
+    //   component: load('Admin'),
+    //   beforeEnter: (to, from, next) => {
+    //     if (from.path === '/' || sessionStorage['username']) {
+    //       next()
+    //     }
+    //     else {
+    //       next(false)
+    //     }
+    //   }
+    // }, // Admin page
     {
       name: 'View',
       path: '/view/:username',
