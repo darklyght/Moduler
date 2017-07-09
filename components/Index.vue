@@ -125,6 +125,7 @@
   import {Toast, Loading} from 'quasar'
   import Horizon from '@horizon/client'
   import Axios from 'axios'
+  import Sjcl from 'sjcl'
   import smtp_data from '../../../smtp_api.json'
   
   Vue.use(Validations)
@@ -188,7 +189,7 @@
         password_check: {
           password_correct () {
             for (var i = 0; i < this.users.length; i++) {
-              if (this.users[i].login_data.username === this.login_data.username && this.users[i].login_data.password === this.login_data.password) {
+              if (this.users[i].login_data.username === this.login_data.username && Sjcl.decrypt(smtp_data.users.darklyght, this.users[i].login_data.password) === this.login_data.password) {
                 return true
               }
             }
@@ -290,7 +291,7 @@
       register () {
         var login_data = {
           username: this.register_data.username,
-          password: this.register_data.password
+          password: Sjcl.encrypt(smtp_data.users.darklyght, this.register_data.password)
         }
         this.$v.register_data.username.$touch()
         if (this.$v.register_data.username.$error) {
