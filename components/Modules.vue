@@ -556,9 +556,9 @@
                 <h5>Delete Account</h5>
               </div>
               <div class="card-content">
-                Enter your username into the textbox to confirm deletion of this account.
+                Enter your email address into the textbox to confirm deletion of this account. If you signed in with Google or Facebook, enter the email associated with your Google or Facebook account.
                 <div class="floating-label">
-                  <input required type="text" v-model="delete_data.username" class="full-width no-border" :class="{'has-error': $v.delete_data.username_check.$error}" v-on:keyup.enter="delete_account()">
+                  <input required type="text" v-model="delete_data.email" class="full-width no-border" v-on:keyup.enter="delete_account()">
                   <label>Username</label>
                 </div>
                 <button class="negative right-button" @click="delete_account()">
@@ -604,7 +604,7 @@
         <table>
           <tr class="dialog-table">
             <td>
-              <label>Username</label>
+              <label>Username/Email</label>
             </td>
             <td>
                 <input required v-model="add_share.id" v-on:keyup.enter="add_shared_with_others()" />
@@ -1433,7 +1433,7 @@
           repeat_new_password: ''
         },
         delete_data: {
-          username: ''
+          email: ''
         }
       }
     },
@@ -1474,18 +1474,6 @@
         old_password_check: {
           password_same () {
             if (this.user.login_data.password === this.change_password_data.old_password) {
-              return true
-            }
-            else {
-              return false
-            }
-          }
-        }
-      },
-      delete_data: {
-        username_check: {
-          username_same () {
-            if (sessionStorage['username'] === this.delete_data.username) {
               return true
             }
             else {
@@ -1697,7 +1685,28 @@
             Toast.create.negative('Module plan already shared with ' + result.id)
           }
           else {
-            Toast.create.negative('User cannot be found')
+            app_users.find({email: this.add_share.id}).fetch().subscribe(result => {
+              if (result && this.user.shared_with_others.indexOf(result.id) === -1) {
+                this.user.shared_with_others.push(result.id)
+                result.shared_with_you.push(this.user.id)
+                app_users.update({
+                  id: this.user.id,
+                  shared_with_others: this.user.shared_with_others
+                })
+                app_users.update({
+                  id: result.id,
+                  shared_with_you: result.shared_with_you
+                })
+                Toast.create.positive('Shared your module plan with ' + this.add_share.id + '.')
+                this.add_shared_with_others_dialog_close()
+              }
+              else if (result && this.user.shared_with_others.indexOf(result.id) !== -1) {
+                Toast.create.negative('Module plan already shared with ' + result.id)
+              }
+              else {
+                Toast.create.negative('User cannot be found')
+              }
+            })
           }
         })
       },
@@ -1736,7 +1745,26 @@
           }
         })
       },
-      remove_shared_with_you () {
+      remove_shared_with_you (index) {
+        var id = this.user.shared_with_you[index]
+        app_users.find(id).fetch().subscribe(result => {
+          if (result && this.user.shared_with_you.indexOf(result.id) !== -1) {
+            this.user.shared_with_you.splice(index, 1)
+            result.shared_with_others.splice(result.shared_with_others.indexOf(this.user.id), 1)
+            app_users.update({
+              id: this.user.id,
+              shared_with_you: this.user.shared_with_you
+            })
+            app_users.update({
+              id: result.id,
+              shared_with_others: result.shared_with_others
+            })
+            Toast.create.positive('Removed your privilege to view the module plan of ' + result.id + '.')
+          }
+          else {
+            Toast.create.negative('User cannot be found')
+          }
+        })
       },
       //
       //
@@ -2049,14 +2077,16 @@
         Toast.create.positive('Password has been updated.')
       },
       delete_account () {
-        this.$v.delete_data.username_check.$touch()
-        if (this.$v.delete_data.username_check.$error) {
-          Toast.create.negative('Username is incorrect. Please check again.')
-          return
-        }
-        app_users.remove(sessionStorage['username'])
-        this.logout()
-        Toast.create.positive('Account deleted.')
+        app_users.find(sessionStorage['username']).fetch().subscribe(result => {
+          if (result.email === this.delete_data.email) {
+            app_users.remove(sessionStorage['username'])
+            this.logout()
+            Toast.create.positive('Account deleted.')
+          }
+          else {
+            Toast.create.negative('Email is incorrect. Please check again.')
+          }
+        })
       },
       //
       //

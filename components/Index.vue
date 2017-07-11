@@ -38,12 +38,26 @@
               <span class="light-paragraph">&nbsp;Remember me</span>
             </label>
             <br />
-            <button class="blue clear" id="forgot-button" @click="forgot_password_dialog()">
-              <label>Forgot Password</label>
-            </button>
             <button class="positive circular" id="login-button" @click="login()">
               <i>vpn_key</i>
             </button>
+            <button class="blue clear" id="forgot-button" @click="forgot_password_dialog()">
+              <label>Forgot Password</label>
+            </button>
+            <br />
+            <br />
+            <br />
+            <g-signin-button :params="google_sign_in_params" @success="google_success" @error="google_error">
+              <button class="blue">
+                Sign in with Google
+              </button>
+            </g-signin-button>
+            <br />
+            <fb-signin-button :params="fb_sign_in_params" @success="fb_success" @error="fb_error">
+              <button class="blue">
+                Sign in with Facebook
+              </button>
+            </fb-signin-button>
           </div>
         </div>
       </div>
@@ -119,6 +133,24 @@
 </template>
 
 <script>
+  /* eslint-disable */
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId: '252564631903334',
+      cookie: true,  // enable cookies to allow the server to access the session
+      xfbml: true,  // parse social plugins on this page
+      version: 'v2.8' // use graph api version 2.8
+    });
+  };
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+  /* eslint-enable */
+
   import Vue from 'vue'
   import Validations from 'vuelidate'
   import {required, sameAs, minLength, alphaNum, email} from 'vuelidate/lib/validators'
@@ -126,9 +158,13 @@
   import Horizon from '@horizon/client'
   import Axios from 'axios'
   import Sjcl from 'sjcl'
+  import GSignInButton from 'vue-google-signin-button'
+  import FBSignInButton from 'vue-facebook-signin-button'
   import smtp_data from '../../../smtp_api.json'
   
   Vue.use(Validations)
+  Vue.use(GSignInButton)
+  Vue.use(FBSignInButton)
   
   const horizon = Horizon({host: 'localhost:8181'})
   const app_users = horizon('app_users')
@@ -168,6 +204,13 @@
           username: '',
           password: '',
           remember: false
+        },
+        google_sign_in_params: {
+          client_id: '524259464334-q6ucfimeubjcf90j3p7a7i58v5padbmr.apps.googleusercontent.com'
+        },
+        fb_sign_in_params: {
+          scope: 'email',
+          return_scopes: true
         },
         register_data: {
           username: '',
@@ -287,6 +330,148 @@
         })
         Loading.hide()
         Toast.create.positive('Logged in.')
+      },
+      google_success (user) {
+        for (var i = 0; i < this.users.length; i++) {
+          if (this.users[i].id === user.getBasicProfile().getName()) {
+            sessionStorage.setItem('username', user.getBasicProfile().getName())
+            this.$router.push({
+              name: 'Modules',
+              params: {
+                username: user.getBasicProfile().getName()
+              }
+            })
+            return
+          }
+        }
+        for (i = 0; i < this.users.length; i++) {
+          if (this.users[i].email === user.getBasicProfile().getEmail()) {
+            Toast.create.negative('Email is registered with another account. Please use another email.')
+            return
+          }
+        }
+        var login_data = {
+          username: user.getBasicProfile().getName(),
+          password: ''
+        }
+        Loading.show()
+        Axios.request({
+          url: smtp_data.endpoint,
+          method: 'post',
+          auth: {
+            username: 'darklyght',
+            password: smtp_data.users.darklyght
+          },
+          params: {
+            subject: 'Successful Registration on Moduler',
+            from: 'mailer@darklyght.com',
+            to: user.getBasicProfile().getEmail(),
+            text: ('Your account has been registered successfully at http://orbital.darklyght.com using Google authentication.')
+          }
+        }).then((response) => {
+          Loading.hide()
+          if (response.status === 200 && response.data.status === 'success') {
+            app_users.store({
+              id: user.getBasicProfile().getName(),
+              login_data: login_data,
+              email: user.getBasicProfile().getEmail(),
+              validated: true,
+              validation_code: '',
+              reset_state: false,
+              reset_code: '',
+              api_key: uuid(),
+              theme: 'blue',
+              modules: [[]],
+              shared_with_others: [],
+              shared_with_you: []
+            })
+            sessionStorage.setItem('username', user.getBasicProfile().getName())
+            this.$router.push({
+              name: 'Modules',
+              params: {
+                username: user.getBasicProfile().getName()
+              }
+            })
+          }
+          else {
+            Toast.create.negative('There has been an error. Please contact the server administrator.')
+          }
+        })
+      },
+      google_error () {
+        Toast.create.negative('There has been an error. Please contact the server administrator.')
+      },
+      fb_success (success) {
+        FB.api('/me?fields=name,email', result => { // eslint-disable-line
+          for (var i = 0; i < this.users.length; i++) {
+            if (this.users[i].id === result.name) {
+              sessionStorage.setItem('username', result.name)
+              this.$router.push({
+                name: 'Modules',
+                params: {
+                  username: result.name
+                }
+              })
+              return
+            }
+          }
+          for (i = 0; i < this.users.length; i++) {
+            if (this.users[i].email === result.email) {
+              Toast.create.negative('Email is registered with another account. Please use another email.')
+              return
+            }
+          }
+          var login_data = {
+            username: result.name,
+            password: ''
+          }
+          Loading.show()
+          Axios.request({
+            url: smtp_data.endpoint,
+            method: 'post',
+            auth: {
+              username: 'darklyght',
+              password: smtp_data.users.darklyght
+            },
+            params: {
+              subject: 'Successful Registration on Moduler',
+              from: 'mailer@darklyght.com',
+              to: result.email,
+              text: ('Your account has been registered successfully at http://orbital.darklyght.com using Facebook authentication.')
+            }
+          }).then((response) => {
+            Loading.hide()
+            if (response.status === 200 && response.data.status === 'success') {
+              app_users.store({
+                id: result.name,
+                login_data: login_data,
+                email: result.email,
+                validated: true,
+                validation_code: '',
+                reset_state: false,
+                reset_code: '',
+                api_key: uuid(),
+                theme: 'blue',
+                modules: [[]],
+                shared_with_others: [],
+                shared_with_you: []
+              })
+              sessionStorage.setItem('username', result.name)
+              this.$router.push({
+                name: 'Modules',
+                params: {
+                  username: result.name
+                }
+              })
+            }
+            else {
+              Toast.create.negative('There has been an error. Please contact the server administrator.')
+            }
+          })
+        })
+      },
+      fb_error () {
+        Toast.create.negative('There has been an error. Please contact the server administrator.')
       },
       register () {
         var login_data = {
@@ -578,9 +763,10 @@ table tr td a
   margin-top 20px
   margin-bottom 20px
 #forgot-button
-  float left
+  float right
   margin-top 30px
   margin-bottom 20px
+  margin-right 10px
 .q-checkbox input:checked + div:before
   background-color #027be3
   border-color #027be3
