@@ -12,6 +12,9 @@
         <q-tab name="register" icon="create">
           Register
         </q-tab>
+        <q-tab name="about" icon="info">
+          About
+        </q-tab>
       </q-tabs>
 
 
@@ -90,6 +93,25 @@
             <button class="positive circular" id="register-button" @click="register()">
               <i>create</i>
             </button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- About Tab -->
+      <div ref="about">
+        <div class="card" id="about-box">
+          <div class="card-title">
+            <h4><span class="uppercase text-bold">About</span></h4>
+          </div>
+          <div class="card-content">
+            <h5><span class="text-bold">About Us</span></h5>
+            <p>We are two students from the National University of Singapore majoring in Electrical Engineering.</p>
+            <h5><span class="text-bold">About Moduler</span></h5>
+            <p>Moduler is a web application created as part of our Orbital project at the National University of Singapore. Moduler aims to help NUS engineering students plan their modules, such that they would be able to take modules they are interested in, without worrying about whether they have taken the prerequisites.</p>
+            <h5><span class="text-bold">Moduler API</span></h5>
+            <p>A RESTful API is available for Moduler at <a href="http://orbital.darklyght.com:3000/" target="_blank">http://orbital.darklyght.com:3000/</a>. A registered account (not associated with a Facebook or Google account) at Moduler is required to use the API. The username and API key is used for HTTP authentication.</p>
+            <p>Documentation for the API is available at <a href="http://docs.orbital.darklyght.com/" target="_blank">http://docs.orbital.darklyght.com/</a>.</p>
           </div>
         </div>
       </div>
@@ -246,6 +268,7 @@
                 return this.users[i].validated
               }
             }
+            return false
           }
         }
       },
@@ -289,14 +312,14 @@
           Toast.create.negative('Password field cannot be empty.')
           return
         }
-        this.$v.login_data.validated_check.$touch()
-        if (this.$v.login_data.validated_check.$error) {
-          Toast.create.negative('Account has not been validated. Please check your registered email for validation instructions.')
-          return
-        }
         this.$v.login_data.password_check.$touch()
         if (this.$v.login_data.password_check.$error) {
           Toast.create.negative('Username or password is incorrect. Please try again.')
+          return
+        }
+        this.$v.login_data.validated_check.$touch()
+        if (this.$v.login_data.validated_check.$error) {
+          Toast.create.negative('Account has not been validated. Please check your registered email for validation instructions.')
           return
         }
         sessionStorage.setItem('username', this.login_data.username)

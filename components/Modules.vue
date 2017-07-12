@@ -559,7 +559,7 @@
                 Enter your email address into the textbox to confirm deletion of this account. If you signed in with Google or Facebook, enter the email associated with your Google or Facebook account.
                 <div class="floating-label">
                   <input required type="text" v-model="delete_data.email" class="full-width no-border" v-on:keyup.enter="delete_account()">
-                  <label>Username</label>
+                  <label>Email</label>
                 </div>
                 <button class="negative right-button" @click="delete_account()">
                   Delete
