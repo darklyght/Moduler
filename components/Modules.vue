@@ -426,6 +426,53 @@
                 </table>
               </div>
             </div>
+            <div class="card" :class="theme_bg">
+              <div class="card-title">
+                <h5>Email</h5>
+              </div>
+              <div class="card-content">
+                Enter an email address to send your module plan.
+                <div class="column group">
+                  <label>
+                    Arrangement of Modules
+                  </label>
+                  <label>
+                    <q-radio v-model="email_share_data.tab" val="modules"></q-radio>
+                    &nbsp;By Semester
+                  </label>
+                  <label>
+                    <q-radio v-model="email_share_data.tab" val="data"></q-radio>
+                    &nbsp;By Module Type
+                  </label>
+                </div>
+                <!--
+                <div class="column group">
+                  <label>
+                    File Format:
+                  </label>
+                  <label>
+                    <q-radio v-model="email_share_data.format" val="pdf"></q-radio>
+                    &nbsp;PDF
+                  </label>
+                  <label>
+                    <q-radio v-model="email_share_data.format" val="png"></q-radio>
+                    &nbsp;PNG
+                  </label>
+                  <label>
+                    <q-radio v-model="email_share_data.format" val="csv"></q-radio>
+                    &nbsp;CSV
+                  </label>
+                </div>
+                -->
+                <div class="floating-label">
+                  <input required type="text" v-model="email_share_data.email" class="full-width no-border" :class="{'has-error': $v.email_share_data.email.$error}" v-on:keyup.enter="email_share()">
+                  <label>Email</label>
+                </div>
+                <button class="positive right-button" @click="email_share()">
+                  Send
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -792,9 +839,10 @@
 <script>
   import Vue from 'vue'
   import Validations from 'vuelidate'
-  import {required, sameAs, minLength} from 'vuelidate/lib/validators'
-  import {Utils, Toast} from 'quasar'
+  import {required, sameAs, minLength, email} from 'vuelidate/lib/validators'
+  import {Utils, Toast, Loading} from 'quasar'
   import Horizon from '@horizon/client'
+  import Axios from 'axios'
   import Sjcl from 'sjcl'
   import Modules from './modules.json'
   import smtp_data from '../../../smtp_api.json'
@@ -1426,6 +1474,11 @@
         add_share: {
           id: ''
         },
+        email_share_data: {
+          email: '',
+          tab: 'modules',
+          format: 'csv'
+        },
         //
         //
         //
@@ -1475,6 +1528,9 @@
       //     }
       //   }
       // },
+      email_share_data: {
+        email: {email}
+      },
       change_password_data: {
         new_password: {required, minLength: minLength(5)},
         repeat_new_password: {sameAsPassword: sameAs('new_password')},
@@ -1770,6 +1826,495 @@
           }
           else {
             Toast.create.negative('User cannot be found')
+          }
+        })
+      },
+      email_share () {
+        this.$v.email_share_data.email.$touch()
+        if (this.$v.email_share_data.email.$error) {
+          Toast.create.negative('This is not a valid email. Please check again.')
+          return
+        }
+        if (this.email_share_data.tab === 'modules') {
+          if (this.email_share_data.format === 'pdf') {
+            this.email_share_modules_pdf()
+          }
+          else if (this.email_share_data.format === 'csv') {
+            this.email_share_modules_csv()
+          }
+          else if (this.email_share_data.format === 'png') {
+            this.email_share_modules_png()
+          }
+        }
+        else if (this.email_share_data.tab === 'data') {
+          if (this.email_share_data.format === 'pdf') {
+            this.email_share_data_pdf()
+          }
+          else if (this.email_share_data.format === 'csv') {
+            this.email_share_data_csv()
+          }
+          else if (this.email_share_data.format === 'png') {
+            this.email_share_data_png()
+          }
+        }
+      },
+      // email_share_modules_pdf () {
+      //   var num_modules = 0
+      //   var num_semesters = 0
+      //   for (var i = 0; i < this.user.modules.length; i++) {
+      //     num_semesters = num_semesters + 1
+      //     for (var j = 0; j < this.user.modules[i].length; j++) {
+      //       num_modules = num_modules + 1
+      //     }
+      //   }
+      //   var modules_image = document.getElementById('text-canvas')
+      //   var modules_context = modules_image.getContext('2d')
+      //   modules_image.width = 800
+      //   modules_image.height = num_modules * 40 + num_semesters * 120 + 140
+      //   modules_context.fillStyle = '#FFFFFF'
+      //   modules_context.fillRect(0, 0, 900, num_modules * 40 + num_semesters * 120 + 140)
+      //   modules_context.fillStyle = '#FFA500'
+      //   modules_context.fillRect(0, 0, 800, 100)
+      //   modules_context.fillStyle = '#000000'
+      //   modules_context.font = 'bold 50px Roboto'
+      //   modules_context.fillText('Module Plan by Semester', 10, 60)
+      //   modules_context.font = 'bold 30px Roboto'
+      //   modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+      //   var row = 170
+      //   for (i = 0; i < this.user.modules.length; i++) {
+      //     var total_credits = 0
+      //     for (j = 0; j < this.user.modules[i].length; j++) {
+      //       total_credits = total_credits + this.user.modules[i][j].credits
+      //     }
+      //     modules_context.fillStyle = '#1E90FF'
+      //     modules_context.fillRect(0, row - 30, 800, 40)
+      //     modules_context.fillStyle = '#000000'
+      //     modules_context.font = 'bold 30px Roboto'
+      //     modules_context.fillText('Semester ' + (i + 1), 10, row)
+      //     modules_context.fillText(total_credits, 410, row)
+      //     row = row + 80
+      //     for (j = 0; j < this.user.modules[i].length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(this.user.modules[i][j].code, 10, row)
+      //       modules_context.fillText(this.user.modules[i][j].credits, 410, row)
+      //       modules_context.fillText(this.user.modules[i][j].final_grade, 610, row)
+      //       row = row + 40
+      //     }
+      //     row = row + 40
+      //   }
+      //   var image_pdf = modules_context.canvas.toDataURL('image/jpeg', 0.2)
+      //   var doc = new jsPDF() // eslint-disable-line
+      //   var pdf = doc.addImage(image_pdf, 'JPEG', 0, 0).output('datauristring')
+      //   Loading.show()
+      //   Axios.request({
+      //     url: smtp_data.endpoint,
+      //     method: 'post',
+      //     auth: {
+      //       username: 'darklyght',
+      //       password: smtp_data.users.darklyght
+      //     },
+      //     params: {
+      //       subject: (this.user.id + '\'s Module Plan on Moduler'),
+      //       from: 'mailer@darklyght.com',
+      //       to: this.email_share_data.email,
+      //       text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+      //       attachment_type: 'pdf',
+      //       attachment_filename: (this.user.id + '.pdf'),
+      //       attachment_content: pdf
+      //     }
+      //   }).then((response) => {
+      //     Loading.hide()
+      //     if (response.status === 200 && response.data.status === 'success') {
+      //       Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+      //     }
+      //     else {
+      //       Toast.create.negative('There has been an error. Please contact the server administrator.')
+      //     }
+      //   })
+      // },
+      // email_share_modules_png () {
+      //   var num_modules = 0
+      //   var num_semesters = 0
+      //   for (var i = 0; i < this.user.modules.length; i++) {
+      //     num_semesters = num_semesters + 1
+      //     for (var j = 0; j < this.user.modules[i].length; j++) {
+      //       num_modules = num_modules + 1
+      //     }
+      //   }
+      //   var modules_image = document.getElementById('text-canvas')
+      //   var modules_context = modules_image.getContext('2d')
+      //   modules_image.width = 800
+      //   modules_image.height = num_modules * 40 + num_semesters * 120 + 140
+      //   modules_context.fillStyle = '#FFFFFF'
+      //   modules_context.fillRect(0, 0, 900, num_modules * 40 + num_semesters * 120 + 140)
+      //   modules_context.fillStyle = '#FFA500'
+      //   modules_context.fillRect(0, 0, 800, 100)
+      //   modules_context.fillStyle = '#000000'
+      //   modules_context.font = 'bold 50px Roboto'
+      //   modules_context.fillText('Module Plan by Semester', 10, 60)
+      //   modules_context.font = 'bold 30px Roboto'
+      //   modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+      //   var row = 170
+      //   for (i = 0; i < this.user.modules.length; i++) {
+      //     var total_credits = 0
+      //     for (j = 0; j < this.user.modules[i].length; j++) {
+      //       total_credits = total_credits + this.user.modules[i][j].credits
+      //     }
+      //     modules_context.fillStyle = '#1E90FF'
+      //     modules_context.fillRect(0, row - 30, 800, 40)
+      //     modules_context.fillStyle = '#000000'
+      //     modules_context.font = 'bold 30px Roboto'
+      //     modules_context.fillText('Semester ' + (i + 1), 10, row)
+      //     modules_context.fillText(total_credits, 410, row)
+      //     row = row + 80
+      //     for (j = 0; j < this.user.modules[i].length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(this.user.modules[i][j].code, 10, row)
+      //       modules_context.fillText(this.user.modules[i][j].credits, 410, row)
+      //       modules_context.fillText(this.user.modules[i][j].final_grade, 610, row)
+      //       row = row + 40
+      //     }
+      //     row = row + 40
+      //   }
+      //   var image = modules_context.canvas.toDataURL('image/png')
+      //   Loading.show()
+      //   Axios.request({
+      //     url: smtp_data.endpoint,
+      //     method: 'post',
+      //     auth: {
+      //       username: 'darklyght',
+      //       password: smtp_data.users.darklyght
+      //     },
+      //     params: {
+      //       subject: (this.user.id + '\'s Module Plan on Moduler'),
+      //       from: 'mailer@darklyght.com',
+      //       to: this.email_share_data.email,
+      //       text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+      //       attachment_type: 'pdf',
+      //       attachment_filename: (this.user.id + '.png'),
+      //       attachment_content: image
+      //     }
+      //   }).then((response) => {
+      //     Loading.hide()
+      //     if (response.status === 200 && response.data.status === 'success') {
+      //       Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+      //     }
+      //     else {
+      //       Toast.create.negative('There has been an error. Please contact the server administrator.')
+      //     }
+      //   })
+      // },
+      email_share_modules_csv () {
+        var str = ''
+        str = str + 'Module Plan by Semester\n\n'
+        for (var i = 1; i <= this.user.modules.length; i++) {
+          str = str + 'Semester ' + i + '\n\n'
+          for (var j = 0; j < this.user.modules[i - 1].length; j++) {
+            str = str + ',' + this.user.modules[i - 1][j].code + ',' + this.user.modules[i - 1][j].final_grade + ',' + this.user.modules[i - 1][j].credits + '\n'
+          }
+          str = str + '\n'
+        }
+        Loading.show()
+        Axios.request({
+          url: smtp_data.endpoint,
+          method: 'post',
+          auth: {
+            username: 'darklyght',
+            password: smtp_data.users.darklyght
+          },
+          params: {
+            subject: (this.user.id + '\'s Module Plan on Moduler'),
+            from: 'mailer@darklyght.com',
+            to: this.email_share_data.email,
+            text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+            attachment_type: 'csv',
+            attachment_filename: (this.user.id + '.csv'),
+            attachment_content: str
+          }
+        }).then((response) => {
+          Loading.hide()
+          if (response.status === 200 && response.data.status === 'success') {
+            Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+          }
+          else {
+            Toast.create.negative('There has been an error. Please contact the server administrator.')
+          }
+        })
+      },
+      // email_share_data_pdf () {
+      //   var modules = [{
+      //     type: 'University Level Requirements',
+      //     mods: this.ulr_mods
+      //   },
+      //   {
+      //     type: 'Faculty Level Requirements',
+      //     mods: this.flr_mods
+      //   },
+      //   {
+      //     type: 'Core Modules',
+      //     mods: this.rcm_mods
+      //   },
+      //   {
+      //     type: 'Technical Electives',
+      //     mods: this.te_mods
+      //   },
+      //   {
+      //     type: 'Industrial Attachment',
+      //     mods: this.ia_mods
+      //   },
+      //   {
+      //     type: 'Unrestricted Electives',
+      //     mods: this.ue_mods
+      //   }]
+      //   var num_modules = 0
+      //   for (var i = 0; i < this.user.modules.length; i++) {
+      //     for (var j = 0; j < this.user.modules[i].length; j++) {
+      //       num_modules = num_modules + 1
+      //     }
+      //   }
+      //   var modules_image = document.getElementById('text-canvas')
+      //   var modules_context = modules_image.getContext('2d')
+      //   modules_image.width = 800
+      //   modules_image.height = num_modules * 40 + modules.length * 240 + 140
+      //   modules_context.fillStyle = '#FFFFFF'
+      //   modules_context.fillRect(0, 0, 900, num_modules * 40 + modules.length * 240 + 140)
+      //   modules_context.fillStyle = '#FFA500'
+      //   modules_context.fillRect(0, 0, 800, 100)
+      //   modules_context.fillStyle = '#000000'
+      //   modules_context.font = 'bold 50px Roboto'
+      //   modules_context.fillText('Module Plan by Module Type', 10, 60)
+      //   modules_context.font = 'bold 30px Roboto'
+      //   modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+      //   var row = 170
+      //   for (i = 0; i < modules.length; i++) {
+      //     modules_context.fillStyle = '#1E90FF'
+      //     modules_context.fillRect(0, row - 30, 800, 40)
+      //     modules_context.fillStyle = '#000000'
+      //     modules_context.font = 'bold 30px Roboto'
+      //     modules_context.fillText(modules[i].type, 10, row)
+      //     modules_context.fillText(modules[i].mods.credits_done, 610, row)
+      //     modules_context.fillText('(' + (modules[i].mods.credits_done + modules[i].mods.credits_planned) + ')', 710, row)
+      //     row = row + 80
+      //     modules_context.fillText('Modules Completed', 10, row)
+      //     row = row + 40
+      //     for (j = 0; j < modules[i].mods.modules_done.length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(modules[i].mods.modules_done[j].code, 10, row)
+      //       modules_context.fillText(modules[i].mods.modules_done[j].grade, 410, row)
+      //       modules_context.fillText(modules[i].mods.modules_done[j].credits, 610, row)
+      //       row = row + 40
+      //     }
+      //     modules_context.font = 'bold 30px Roboto'
+      //     row = row + 40
+      //     modules_context.fillText('Modules Planned', 10, row)
+      //     row = row + 40
+      //     for (j = 0; j < modules[i].mods.modules_planned.length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].code, 10, row)
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].grade, 410, row)
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].credits, 710, row)
+      //       row = row + 40
+      //     }
+      //     row = row + 40
+      //   }
+      //   var image_pdf = modules_context.canvas.toDataURL('image/jpeg')
+      //   var doc = new jsPDF() // eslint-disable-line
+      //   var pdf = doc.addImage(image_pdf, 'JPEG', 0, 0).output('datauristring')
+      //   Loading.show()
+      //   Axios.request({
+      //     url: smtp_data.endpoint,
+      //     method: 'post',
+      //     auth: {
+      //       username: 'darklyght',
+      //       password: smtp_data.users.darklyght
+      //     },
+      //     params: {
+      //       subject: (this.user.id + '\'s Module Plan on Moduler'),
+      //       from: 'mailer@darklyght.com',
+      //       to: this.email_share_data.email,
+      //       text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+      //       attachment_type: 'pdf',
+      //       attachment_filename: (this.user.id + '.pdf'),
+      //       attachment_content: pdf
+      //     }
+      //   }).then((response) => {
+      //     Loading.hide()
+      //     if (response.status === 200 && response.data.status === 'success') {
+      //       Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+      //     }
+      //     else {
+      //       Toast.create.negative('There has been an error. Please contact the server administrator.')
+      //     }
+      //   })
+      // },
+      // email_share_data_png () {
+      //   var modules = [{
+      //     type: 'University Level Requirements',
+      //     mods: this.ulr_mods
+      //   },
+      //   {
+      //     type: 'Faculty Level Requirements',
+      //     mods: this.flr_mods
+      //   },
+      //   {
+      //     type: 'Core Modules',
+      //     mods: this.rcm_mods
+      //   },
+      //   {
+      //     type: 'Technical Electives',
+      //     mods: this.te_mods
+      //   },
+      //   {
+      //     type: 'Industrial Attachment',
+      //     mods: this.ia_mods
+      //   },
+      //   {
+      //     type: 'Unrestricted Electives',
+      //     mods: this.ue_mods
+      //   }]
+      //   var num_modules = 0
+      //   for (var i = 0; i < this.user.modules.length; i++) {
+      //     for (var j = 0; j < this.user.modules[i].length; j++) {
+      //       num_modules = num_modules + 1
+      //     }
+      //   }
+      //   var modules_image = document.getElementById('text-canvas')
+      //   var modules_context = modules_image.getContext('2d')
+      //   modules_image.width = 800
+      //   modules_image.height = num_modules * 40 + modules.length * 240 + 140
+      //   modules_context.fillStyle = '#FFFFFF'
+      //   modules_context.fillRect(0, 0, 900, num_modules * 40 + modules.length * 240 + 140)
+      //   modules_context.fillStyle = '#FFA500'
+      //   modules_context.fillRect(0, 0, 800, 100)
+      //   modules_context.fillStyle = '#000000'
+      //   modules_context.font = 'bold 50px Roboto'
+      //   modules_context.fillText('Module Plan by Module Type', 10, 60)
+      //   modules_context.font = 'bold 30px Roboto'
+      //   modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+      //   var row = 170
+      //   for (i = 0; i < modules.length; i++) {
+      //     modules_context.fillStyle = '#1E90FF'
+      //     modules_context.fillRect(0, row - 30, 800, 40)
+      //     modules_context.fillStyle = '#000000'
+      //     modules_context.font = 'bold 30px Roboto'
+      //     modules_context.fillText(modules[i].type, 10, row)
+      //     modules_context.fillText(modules[i].mods.credits_done, 610, row)
+      //     modules_context.fillText('(' + (modules[i].mods.credits_done + modules[i].mods.credits_planned) + ')', 710, row)
+      //     row = row + 80
+      //     modules_context.fillText('Modules Completed', 10, row)
+      //     row = row + 40
+      //     for (j = 0; j < modules[i].mods.modules_done.length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(modules[i].mods.modules_done[j].code, 10, row)
+      //       modules_context.fillText(modules[i].mods.modules_done[j].grade, 410, row)
+      //       modules_context.fillText(modules[i].mods.modules_done[j].credits, 610, row)
+      //       row = row + 40
+      //     }
+      //     modules_context.font = 'bold 30px Roboto'
+      //     row = row + 40
+      //     modules_context.fillText('Modules Planned', 10, row)
+      //     row = row + 40
+      //     for (j = 0; j < modules[i].mods.modules_planned.length; j++) {
+      //       modules_context.font = 'normal 30px \'Roboto Condensed\''
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].code, 10, row)
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].grade, 410, row)
+      //       modules_context.fillText(modules[i].mods.modules_planned[j].credits, 710, row)
+      //       row = row + 40
+      //     }
+      //     row = row + 40
+      //   }
+      //   var image = modules_context.canvas.toDataURL('image/png')
+      //   Loading.show()
+      //   Axios.request({
+      //     url: smtp_data.endpoint,
+      //     method: 'post',
+      //     auth: {
+      //       username: 'darklyght',
+      //       password: smtp_data.users.darklyght
+      //     },
+      //     params: {
+      //       subject: (this.user.id + '\'s Module Plan on Moduler'),
+      //       from: 'mailer@darklyght.com',
+      //       to: this.email_share_data.email,
+      //       text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+      //       attachment_type: 'pdf',
+      //       attachment_filename: (this.user.id + '.png'),
+      //       attachment_content: image
+      //     }
+      //   }).then((response) => {
+      //     Loading.hide()
+      //     console.log(response)
+      //     if (response.status === 200 && response.data.status === 'success') {
+      //       Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+      //     }
+      //     else {
+      //       Toast.create.negative('There has been an error. Please contact the server administrator.')
+      //     }
+      //   })
+      // },
+      email_share_data_csv () {
+        var str = ''
+        str = str + 'Module Plan by Module Type\n\n'
+        var modules = [{
+          type: 'University Level Requirements',
+          mods: this.ulr_mods
+        },
+        {
+          type: 'Faculty Level Requirements',
+          mods: this.flr_mods
+        },
+        {
+          type: 'Core Modules',
+          mods: this.rcm_mods
+        },
+        {
+          type: 'Technical Electives',
+          mods: this.te_mods
+        },
+        {
+          type: 'Industrial Attachment',
+          mods: this.ia_mods
+        },
+        {
+          type: 'Unrestricted Electives',
+          mods: this.ue_mods
+        }]
+        for (var i = 0; i < modules.length; i++) {
+          str = str + modules[i].type + ',,,' + modules[i].mods.credits_done + ',' + modules[i].mods.credits_planned + '\n\n'
+          str = str + ',Completed Modules\n'
+          for (var j = 0; j < modules[i].mods.modules_done.length; j++) {
+            str = str + ',' + modules[i].mods.modules_done[j].code + ',' + modules[i].mods.modules_done[j].grade + ',' + modules[i].mods.modules_done[j].credits + '\n'
+          }
+          str = str + '\n,Planned Modules\n'
+          for (j = 0; j < modules[i].mods.modules_planned.length; j++) {
+            str = str + ',' + modules[i].mods.modules_planned[j].code + ',' + modules[i].mods.modules_planned[j].grade + ',,' + modules[i].mods.modules_planned[j].credits + '\n'
+          }
+          str = str + '\n'
+        }
+        Loading.show()
+        Axios.request({
+          url: smtp_data.endpoint,
+          method: 'post',
+          auth: {
+            username: 'darklyght',
+            password: smtp_data.users.darklyght
+          },
+          params: {
+            subject: (this.user.id + '\'s Module Plan on Moduler'),
+            from: 'mailer@darklyght.com',
+            to: this.email_share_data.email,
+            text: (this.user.id + ' has shared his/her module plan with you. The module plan is attached to the email.'),
+            attachment_type: 'csv',
+            attachment_filename: (this.user.id + '.csv'),
+            attachment_content: str
+          }
+        }).then((response) => {
+          Loading.hide()
+          if (response.status === 200 && response.data.status === 'success') {
+            Toast.create.positive('Email sent to ' + this.email_share_data.email + '.')
+          }
+          else {
+            Toast.create.negative('There has been an error. Please contact the server administrator.')
           }
         })
       },
