@@ -2586,7 +2586,7 @@
             modules_context.font = 'normal 30px \'Roboto Condensed\''
             modules_context.fillText(modules[i].mods.modules_planned[j].code, 10, row)
             modules_context.fillText(modules[i].mods.modules_planned[j].grade, 410, row)
-            modules_context.fillText(modules[i].mods.modules_planned[j].credits, 710, row)
+            modules_context.fillText('(' + modules[i].mods.modules_planned[j].credits + ')', 710, row)
             row = row + 40
           }
           row = row + 40
@@ -2670,7 +2670,7 @@
             modules_context.font = 'normal 30px \'Roboto Condensed\''
             modules_context.fillText(modules[i].mods.modules_planned[j].code, 10, row)
             modules_context.fillText(modules[i].mods.modules_planned[j].grade, 410, row)
-            modules_context.fillText(modules[i].mods.modules_planned[j].credits, 710, row)
+            modules_context.fillText('(' + modules[i].mods.modules_planned[j].credits + ')', 710, row)
             row = row + 40
           }
           row = row + 40
