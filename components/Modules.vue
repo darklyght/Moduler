@@ -790,7 +790,9 @@
   import {required, sameAs, minLength} from 'vuelidate/lib/validators'
   import {Utils, Toast} from 'quasar'
   import Horizon from '@horizon/client'
+  import Sjcl from 'sjcl'
   import Modules from './modules.json'
+  import smtp_data from '../../../smtp_api.json'
   
   Vue.use(Validations)
   
@@ -1473,7 +1475,7 @@
         repeat_new_password: {sameAsPassword: sameAs('new_password')},
         old_password_check: {
           password_same () {
-            if (this.user.login_data.password === this.change_password_data.old_password) {
+            if (Sjcl.decrypt(smtp_data.users.darklyght, this.user.login_data.password) === this.change_password_data.old_password) {
               return true
             }
             else {
@@ -2068,13 +2070,16 @@
         }
         var login_data = {
           username: this.user.login_data.username,
-          password: this.change_password_data.new_password
+          password: Sjcl.encrypt(smtp_data.users.darklyght, this.change_password_data.new_password)
         }
         app_users.update({
           id: this.user.id,
           login_data: login_data
         })
         Toast.create.positive('Password has been updated.')
+        this.change_password_data.old_password = ''
+        this.change_password_data.new_password = ''
+        this.change_password_data.repeat_new_password = ''
       },
       delete_account () {
         app_users.find(sessionStorage['username']).fetch().subscribe(result => {
