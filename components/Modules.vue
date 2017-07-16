@@ -462,6 +462,10 @@
                     File Format:
                   </label>
                   <label>
+                    <q-radio v-model="download_options.format" val="pdf"></q-radio>
+                    &nbsp;PDF
+                  </label>
+                  <label>
                     <q-radio v-model="download_options.format" val="png"></q-radio>
                     &nbsp;PNG
                   </label>
@@ -781,6 +785,7 @@
         </table>
       </div>
     </q-modal>
+    <div id="preload-font"></div>
   </div>
 </template>
 
@@ -1427,7 +1432,7 @@
         // Options Tab Variables
         download_options: {
           tab: 'modules',
-          format: 'png'
+          format: 'pdf'
         },
         change_password_data: {
           old_password: '',
@@ -1774,7 +1779,10 @@
       // Options Tab Methods
       download () {
         if (this.download_options.tab === 'modules') {
-          if (this.download_options.format === 'csv') {
+          if (this.download_options.format === 'pdf') {
+            this.download_modules_pdf()
+          }
+          else if (this.download_options.format === 'csv') {
             this.download_modules_csv()
           }
           else if (this.download_options.format === 'png') {
@@ -1782,7 +1790,10 @@
           }
         }
         else if (this.download_options.tab === 'data') {
-          if (this.download_options.format === 'csv') {
+          if (this.download_options.format === 'pdf') {
+            this.download_data_pdf()
+          }
+          else if (this.download_options.format === 'csv') {
             this.download_data_csv()
           }
           else if (this.download_options.format === 'png') {
@@ -1861,6 +1872,55 @@
         document.body.appendChild(download_link)
         download_link.click()
         document.body.removeChild(download_link)
+      },
+      download_modules_pdf () {
+        var num_modules = 0
+        var num_semesters = 0
+        for (var i = 0; i < this.user.modules.length; i++) {
+          num_semesters = num_semesters + 1
+          for (var j = 0; j < this.user.modules[i].length; j++) {
+            num_modules = num_modules + 1
+          }
+        }
+        var modules_image = document.getElementById('text-canvas')
+        var modules_context = modules_image.getContext('2d')
+        modules_image.width = 800
+        modules_image.height = num_modules * 40 + num_semesters * 120 + 140
+        modules_context.fillStyle = '#FFFFFF'
+        modules_context.fillRect(0, 0, 900, num_modules * 40 + num_semesters * 120 + 140)
+        modules_context.fillStyle = '#FFA500'
+        modules_context.fillRect(0, 0, 800, 100)
+        modules_context.fillStyle = '#000000'
+        modules_context.font = 'bold 50px Roboto'
+        modules_context.fillText('Module Plan by Semester', 10, 60)
+        modules_context.font = 'bold 30px Roboto'
+        modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+        var row = 170
+        for (i = 0; i < this.user.modules.length; i++) {
+          var total_credits = 0
+          for (j = 0; j < this.user.modules[i].length; j++) {
+            total_credits = total_credits + this.user.modules[i][j].credits
+          }
+          modules_context.fillStyle = '#1E90FF'
+          modules_context.fillRect(0, row - 30, 800, 40)
+          modules_context.fillStyle = '#000000'
+          modules_context.font = 'bold 30px Roboto'
+          modules_context.fillText('Semester ' + (i + 1), 10, row)
+          modules_context.fillText(total_credits, 410, row)
+          row = row + 80
+          for (j = 0; j < this.user.modules[i].length; j++) {
+            modules_context.font = 'normal 30px \'Roboto Condensed\''
+            modules_context.fillText(this.user.modules[i][j].code, 10, row)
+            modules_context.fillText(this.user.modules[i][j].credits, 410, row)
+            modules_context.fillText(this.user.modules[i][j].final_grade, 610, row)
+            row = row + 40
+          }
+          row = row + 40
+        }
+        var image = modules_context.canvas.toDataURL('image/png')
+        var pdf = new jsPDF() // eslint-disable-line
+        pdf.addImage(image, 'PNG', 0, 0)
+        pdf.save(this.user.id + '.pdf')
       },
       download_data_csv () {
         var str = ''
@@ -1993,6 +2053,87 @@
         document.body.appendChild(download_link)
         download_link.click()
         document.body.removeChild(download_link)
+      },
+      download_data_pdf () {
+        var modules = [{
+          type: 'University Level Requirements',
+          mods: this.ulr_mods
+        },
+        {
+          type: 'Faculty Level Requirements',
+          mods: this.flr_mods
+        },
+        {
+          type: 'Core Modules',
+          mods: this.rcm_mods
+        },
+        {
+          type: 'Technical Electives',
+          mods: this.te_mods
+        },
+        {
+          type: 'Industrial Attachment',
+          mods: this.ia_mods
+        },
+        {
+          type: 'Unrestricted Electives',
+          mods: this.ue_mods
+        }]
+        var num_modules = 0
+        for (var i = 0; i < this.user.modules.length; i++) {
+          for (var j = 0; j < this.user.modules[i].length; j++) {
+            num_modules = num_modules + 1
+          }
+        }
+        var modules_image = document.getElementById('text-canvas')
+        var modules_context = modules_image.getContext('2d')
+        modules_image.width = 800
+        modules_image.height = num_modules * 40 + modules.length * 240 + 140
+        modules_context.fillStyle = '#FFFFFF'
+        modules_context.fillRect(0, 0, 900, num_modules * 40 + modules.length * 240 + 140)
+        modules_context.fillStyle = '#FFA500'
+        modules_context.fillRect(0, 0, 800, 100)
+        modules_context.fillStyle = '#000000'
+        modules_context.font = 'bold 50px Roboto'
+        modules_context.fillText('Module Plan by Module Type', 10, 60)
+        modules_context.font = 'bold 30px Roboto'
+        modules_context.fillText('Total Credits: ' + this.total_credits.credits_done + ' (' + (this.total_credits.credits_done + this.total_credits.credits_planned) + ')', 10, 130)
+        var row = 170
+        for (i = 0; i < modules.length; i++) {
+          modules_context.fillStyle = '#1E90FF'
+          modules_context.fillRect(0, row - 30, 800, 40)
+          modules_context.fillStyle = '#000000'
+          modules_context.font = 'bold 30px Roboto'
+          modules_context.fillText(modules[i].type, 10, row)
+          modules_context.fillText(modules[i].mods.credits_done, 610, row)
+          modules_context.fillText('(' + (modules[i].mods.credits_done + modules[i].mods.credits_planned) + ')', 710, row)
+          row = row + 80
+          modules_context.fillText('Modules Completed', 10, row)
+          row = row + 40
+          for (j = 0; j < modules[i].mods.modules_done.length; j++) {
+            modules_context.font = 'normal 30px \'Roboto Condensed\''
+            modules_context.fillText(modules[i].mods.modules_done[j].code, 10, row)
+            modules_context.fillText(modules[i].mods.modules_done[j].grade, 410, row)
+            modules_context.fillText(modules[i].mods.modules_done[j].credits, 610, row)
+            row = row + 40
+          }
+          modules_context.font = 'bold 30px Roboto'
+          row = row + 40
+          modules_context.fillText('Modules Planned', 10, row)
+          row = row + 40
+          for (j = 0; j < modules[i].mods.modules_planned.length; j++) {
+            modules_context.font = 'normal 30px \'Roboto Condensed\''
+            modules_context.fillText(modules[i].mods.modules_planned[j].code, 10, row)
+            modules_context.fillText(modules[i].mods.modules_planned[j].grade, 410, row)
+            modules_context.fillText(modules[i].mods.modules_planned[j].credits, 710, row)
+            row = row + 40
+          }
+          row = row + 40
+        }
+        var image = modules_context.canvas.toDataURL('image/png')
+        var pdf = new jsPDF() // eslint-disable-line
+        pdf.addImage(image, 'PNG', 0, 0)
+        pdf.save(this.user.id + '.pdf')
       },
       update_theme () {
         var color1 = ''
@@ -2584,6 +2725,12 @@ table tr td a
   display block
   height 100%
   width 100%
+#preload-font
+  font-family Roboto Condensed
+  opacity 0
+  height 0
+  width 0
+  display inline-block
 #modules-container
   max-width 900px
   min-height 100vh
