@@ -24,6 +24,7 @@
   import Horizon from '@horizon/client'
   import Axios from 'axios'
   import smtp_data from '../../../smtp_api.json'
+  import Sjcl from 'sjcl'
 
   const horizon = Horizon({host: 'localhost:8181'})
   const app_users = horizon('app_users')
@@ -90,7 +91,7 @@
             if (response.status === 200 && response.data.status === 'success') {
               var login_data = {
                 username: this.$route.params.username,
-                password: new_password
+                password: Sjcl.encrypt(smtp_data.users.darklyght, new_password)
               }
               app_users.update({
                 id: this.$route.params.username,
