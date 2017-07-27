@@ -2463,7 +2463,11 @@
           row = row + 40
         }
         var image = modules_context.canvas.toDataURL('image/png')
-        var pdf = new jsPDF('p', 'pt', [800 * 3 / 4, (num_modules * 40 + num_semesters * 120 + 140) * 3 / 4]) // eslint-disable-line
+        var orientation = 'p'
+        if ((num_modules * 40 + num_semesters * 120 + 140) * 3 / 4 < 800 * 3 / 4) {
+          orientation = 'l'
+        }
+        var pdf = new jsPDF(orientation, 'pt', [800 * 3 / 4, (num_modules * 40 + num_semesters * 120 + 140) * 3 / 4]) // eslint-disable-line
         pdf.addImage(image, 'PNG', 0, 0)
         pdf.save(this.user.id + '.pdf')
       },
@@ -2676,7 +2680,11 @@
           row = row + 40
         }
         var image = modules_context.canvas.toDataURL('image/png')
-        var pdf = new jsPDF('p', 'pt', [800 * 3 / 4, (num_modules * 40 + modules.length * 240 + 140) * 3 / 4]) // eslint-disable-line
+        var orientation = 'p'
+        if ((num_modules * 40 + modules.length * 240 + 140) * 3 / 4 < 800 * 3 / 4) {
+          orientation = 'l'
+        }
+        var pdf = new jsPDF(orientation, 'pt', [800 * 3 / 4, (num_modules * 40 + modules.length * 240 + 140) * 3 / 4]) // eslint-disable-line
         pdf.addImage(image, 'PNG', 0, 0)
         pdf.save(this.user.id + '.pdf')
       },
